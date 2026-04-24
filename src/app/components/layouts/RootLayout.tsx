@@ -20,15 +20,16 @@ export function RootLayout() {
   const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
   const [currentUserId, setCurrentUserId] = useState('');
 
-  useEffect(() => {
+useEffect(() => {
+  requestNotificationPermission();
+  checkUserAndOverdueTasks();
+
+  const interval = setInterval(() => {
     checkUserAndOverdueTasks();
+  }, 60000);
 
-    const interval = setInterval(() => {
-      checkUserAndOverdueTasks();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  return () => clearInterval(interval);
+}, []);
 
   async function checkUserAndOverdueTasks() {
     const { data: authData } = await supabase.auth.getUser();
@@ -37,6 +38,14 @@ export function RootLayout() {
       navigate('/login');
       return;
     }
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+}
 
     const userId = authData.user.id;
     setCurrentUserId(userId);
@@ -111,6 +120,14 @@ export function RootLayout() {
     setAlertTasks(notViewedTasks);
     setAlertMessage(message);
     setShowAlert(true);
+
+	if ('Notification' in window && Notification.permission === 'granted') {
+  new Notification('🚨 Tarefa atrasada', {
+    body: message,
+    tag: `tarefa-atrasada-${Date.now()}`,
+    requireInteraction: true,
+  });
+}    
 
     const notificationKey = `${userId}-${notViewedTasks.map((task) => task.id).join('-')}-${new Date().getMinutes()}`;
 
