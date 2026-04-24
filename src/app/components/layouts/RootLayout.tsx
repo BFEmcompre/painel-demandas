@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sidebar } from '../sidebar/Sidebar';
 import { Header } from '../header/Header';
 import { AlertNotification } from '../notifications/AlertNotification';
@@ -13,6 +13,7 @@ type AlertTask = {
 export function RootLayout() {
   const navigate = useNavigate();
 
+  const lastNotificationRef = useRef('');
   const [loading, setLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -111,15 +112,18 @@ export function RootLayout() {
     setAlertMessage(message);
     setShowAlert(true);
 
-    showBrowserNotification(message);
-  }
+    const notificationKey = `${userId}-${notViewedTasks.map((task) => task.id).join('-')}-${new Date().getMinutes()}`;
 
-  async function showBrowserNotification(message: string) {
-    if (!('Notification' in window)) return;
+    if (
+      'Notification' in window &&
+      Notification.permission === 'granted' &&
+      lastNotificationRef.current !== notificationKey
+    ) {
+      lastNotificationRef.current = notificationKey;
 
-    if (Notification.permission === 'granted') {
-      new Notification('Painel de Demandas', {
+      new Notification('🚨 Demanda atrasada', {
         body: message,
+        icon: '/vite.svg',
       });
     }
   }
