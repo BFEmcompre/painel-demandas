@@ -41,13 +41,39 @@ export function RootLayout() {
     if (profile?.role !== 'manager') return;
 
     const now = new Date().toISOString();
+	
+    const { data: pendingTasks } = await supabase
+  .from('tasks')
+  .select('id, title, deadline, status')
+  .in('status', ['pending', 'overdue']);
 
-    const { data: overdueTasks, error } = await supabase
-      .from('tasks')
-      .select('id, title')
-      .eq('status', 'pending')
-      .lt('deadline', now);
+const overdueTasks =
+  pendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
 
+if (overdueTasks.length === 0) return;
+
+const taskIds = overdueTasks.map((task) => task.id);
+
+await supabase
+  .from('tasks')
+  .update({ status: 'overdue' })
+  .in('id', taskIds);
+
+const message =
+  overdueTasks.length === 1
+    ? `A tarefa "${overdueTasks[0].title}" está atrasada.`
+    : `${overdueTasks.length} tarefas estão atrasadas.`;
+
+setAlertMessage(message);
+setShowAlert(true);
+
+// 🔥 AQUI dispara notificação
+if ('Notification' in window && Notification.permission === 'granted') {
+  new Notification('Painel de Demandas', {
+    body: message,
+  });
+}
+  
     if (error || !overdueTasks || overdueTasks.length === 0) return;
 
     const taskIds = overdueTasks.map((task) => task.id);

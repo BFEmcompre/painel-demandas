@@ -126,10 +126,11 @@ export function TaskDetails() {
         .from('task-photos')
         .upload(fileName, photo.file);
 
-      if (uploadError) {
-        toast.error('Erro ao enviar uma das fotos');
-        return;
-      }
+if (uploadError) {
+  console.error(uploadError);
+  toast.error(uploadError.message || 'Erro ao enviar uma das fotos');
+  return;
+}
 
       const { data } = supabase.storage.from('task-photos').getPublicUrl(fileName);
 
