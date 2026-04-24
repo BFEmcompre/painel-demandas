@@ -121,6 +121,9 @@ export function RootLayout() {
     setShowAlert(true);
 
     if ('Notification' in window && Notification.permission === 'granted') {
+       console.log('Permissão:', Notification.permission);
+console.log('Tarefas não vistas:', notViewedTasks);
+console.log('Mensagem:', message);
       new Notification('🚨 Tarefa atrasada', {
         body: message,
         tag: `tarefa-atrasada-${Date.now()}`,
