@@ -5,12 +5,19 @@ import { Header } from '../header/Header';
 import { AlertNotification } from '../notifications/AlertNotification';
 import { supabase } from '../../lib/supabase';
 
+type AlertTask = {
+  id: string;
+  title: string;
+};
+
 export function RootLayout() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
+  const [currentUserId, setCurrentUserId] = useState('');
 
   useEffect(() => {
     checkUserAndOverdueTasks();
@@ -30,38 +37,77 @@ export function RootLayout() {
       return;
     }
 
+    const userId = authData.user.id;
+    setCurrentUserId(userId);
     setLoading(false);
 
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', authData.user.id)
+      .eq('id', userId)
       .single();
 
-    if (profile?.role !== 'manager') return;
-
-    const { data: pendingTasks } = await supabase
+    const { data: allPendingTasks } = await supabase
       .from('tasks')
       .select('id, title, deadline, status')
       .in('status', ['pending', 'overdue']);
 
     const overdueTasks =
-      pendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
+      allPendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
 
-    if (overdueTasks.length === 0) return;
-
-    const taskIds = overdueTasks.map((task) => task.id);
+    if (overdueTasks.length === 0) {
+      setShowAlert(false);
+      return;
+    }
 
     await supabase
       .from('tasks')
       .update({ status: 'overdue' })
-      .in('id', taskIds);
+      .in(
+        'id',
+        overdueTasks.map((task) => task.id)
+      );
+
+    let tasksToNotify = overdueTasks;
+
+    if (profile?.role !== 'manager') {
+      const { data: relations } = await supabase
+        .from('task_responsibles')
+        .select('task_id')
+        .eq('responsible_id', userId);
+
+      const myTaskIds = relations?.map((item) => item.task_id) || [];
+
+      tasksToNotify = overdueTasks.filter((task) => myTaskIds.includes(task.id));
+    }
+
+    if (tasksToNotify.length === 0) {
+      setShowAlert(false);
+      return;
+    }
+
+    const { data: viewedAlerts } = await supabase
+      .from('task_alert_views')
+      .select('task_id')
+      .eq('user_id', userId);
+
+    const viewedTaskIds = viewedAlerts?.map((item) => item.task_id) || [];
+
+    const notViewedTasks = tasksToNotify.filter(
+      (task) => !viewedTaskIds.includes(task.id)
+    );
+
+    if (notViewedTasks.length === 0) {
+      setShowAlert(false);
+      return;
+    }
 
     const message =
-      overdueTasks.length === 1
-        ? `A tarefa "${overdueTasks[0].title}" está atrasada.`
-        : `${overdueTasks.length} tarefas estão atrasadas.`;
+      notViewedTasks.length === 1
+        ? `A tarefa "${notViewedTasks[0].title}" está atrasada.`
+        : `${notViewedTasks.length} tarefas estão atrasadas.`;
 
+    setAlertTasks(notViewedTasks);
     setAlertMessage(message);
     setShowAlert(true);
 
@@ -71,15 +117,26 @@ export function RootLayout() {
   async function showBrowserNotification(message: string) {
     if (!('Notification' in window)) return;
 
-    if (Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
-
     if (Notification.permission === 'granted') {
       new Notification('Painel de Demandas', {
         body: message,
       });
     }
+  }
+
+  async function markAlertAsViewed() {
+    if (!currentUserId || alertTasks.length === 0) return;
+
+    const rows = alertTasks.map((task) => ({
+      task_id: task.id,
+      user_id: currentUserId,
+    }));
+
+    await supabase
+      .from('task_alert_views')
+      .upsert(rows, { onConflict: 'task_id,user_id' });
+
+    setShowAlert(false);
   }
 
   if (loading) {
@@ -107,6 +164,7 @@ export function RootLayout() {
           message={alertMessage}
           type="overdue"
           onClose={() => setShowAlert(false)}
+          onMarkAsViewed={markAlertAsViewed}
         />
       )}
     </div>
