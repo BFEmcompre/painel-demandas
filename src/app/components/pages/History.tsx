@@ -1,0 +1,220 @@
+import { useEffect, useState } from 'react';
+import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
+import { Button } from '../ui/button';
+import { Search, Filter, Download, Eye } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+type Task = {
+  id: string;
+  title: string;
+  description: string;
+  responsible_id: string;
+  responsible_name: string;
+  date: string;
+  deadline: string;
+  completed_at: string | null;
+  status: 'pending' | 'completed' | 'overdue';
+  photo_url: string | null;
+};
+
+type Responsible = {
+  id: string;
+  name: string;
+};
+
+export function History() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [responsibles, setResponsibles] = useState<Responsible[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    const { data: tasksData } = await supabase.from('tasks').select('*');
+
+    const { data: respData } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .eq('role', 'responsible');
+
+    setTasks(tasksData || []);
+    setResponsibles(respData || []);
+  }
+
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch =
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.responsible_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    const matchesResponsible =
+      responsibleFilter === 'all' || task.responsible_id === responsibleFilter;
+
+    return matchesSearch && matchesStatus && matchesResponsible;
+  });
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      completed: 'bg-green-100 text-green-700',
+      overdue: 'bg-red-100 text-red-700',
+      pending: 'bg-yellow-100 text-yellow-700',
+    };
+
+    const labels = {
+      completed: 'Concluída',
+      overdue: 'Atrasada',
+      pending: 'Pendente',
+    };
+
+    return (
+      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles]}`}>
+        {labels[status as keyof typeof labels]}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-gray-900">Histórico</h1>
+          <p className="text-gray-500 mt-1">Visualize todas as demandas registradas</p>
+        </div>
+
+        <Button variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Exportar
+        </Button>
+      </div>
+
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Buscar por tarefa ou responsável..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-48">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pending">Pendentes</SelectItem>
+              <SelectItem value="completed">Concluídas</SelectItem>
+              <SelectItem value="overdue">Atrasadas</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="w-full md:w-48">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {responsibles.map((resp) => (
+                <SelectItem key={resp.id} value={resp.id}>
+                  {resp.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHead>Data</TableHead>
+                <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Prazo</TableHead>
+                <TableHead>Conclusão</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Foto</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {filteredTasks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                    Nenhum registro encontrado
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell>
+                      {new Date(task.date).toLocaleDateString('pt-BR')}
+                    </TableCell>
+
+                    <TableCell>
+                      <p className="font-medium">{task.title}</p>
+                      <p className="text-sm text-gray-500">{task.description}</p>
+                    </TableCell>
+
+                    <TableCell>{task.responsible_name}</TableCell>
+
+                    <TableCell>
+                      {new Date(task.deadline).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </TableCell>
+
+                    <TableCell>
+                      {task.completed_at
+                        ? new Date(task.completed_at).toLocaleTimeString('pt-BR')
+                        : '-'}
+                    </TableCell>
+
+                    <TableCell>{getStatusBadge(task.status)}</TableCell>
+
+                    <TableCell>
+                      {task.photo_url ? (
+                        <a
+                          href={task.photo_url}
+                          target="_blank"
+                          className="text-blue-600 text-sm"
+                        >
+                          Ver foto
+                        </a>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="mt-4 text-sm text-gray-600">
+          {filteredTasks.length} registro(s)
+        </div>
+      </Card>
+    </div>
+  );
+}

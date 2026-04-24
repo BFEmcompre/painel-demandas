@@ -1,0 +1,130 @@
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import {
+  LayoutDashboard,
+  CheckSquare,
+  PlusSquare,
+  History,
+  Users,
+  Settings,
+  LogOut,
+} from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+const managerMenuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  { icon: PlusSquare, label: 'Criar Demanda', path: '/criar-demanda' },
+  { icon: History, label: 'Histórico', path: '/historico' },
+  { icon: Users, label: 'Responsáveis', path: '/responsaveis' },
+  { icon: Settings, label: 'Configurações', path: '/configuracoes' },
+];
+
+const responsibleMenuItems = [
+  { icon: CheckSquare, label: 'Minhas Demandas', path: '/minhas-demandas' },
+  { icon: History, label: 'Histórico', path: '/historico' },
+  { icon: Settings, label: 'Configurações', path: '/configuracoes' },
+];
+
+type Profile = {
+  id: string;
+  name: string;
+  role: 'manager' | 'responsible';
+};
+
+export function Sidebar() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  async function loadUser() {
+    const { data: authData } = await supabase.auth.getUser();
+
+    if (!authData.user) {
+      navigate('/login');
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, name, role')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (!profile) {
+      navigate('/login');
+      return;
+    }
+
+    setUser(profile);
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate('/login');
+  }
+
+  const menuItems = user?.role === 'manager' ? managerMenuItems : responsibleMenuItems;
+
+  return (
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-xl font-semibold text-gray-900">Painel de Demandas</h1>
+        <p className="text-sm text-gray-500 mt-1">Sistema Diário</p>
+      </div>
+
+      <nav className="flex-1 p-4">
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-blue-600 font-semibold">
+              {user?.name?.charAt(0).toUpperCase() || '?'}
+            </span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 truncate">{user?.name || 'Usuário'}</p>
+            <p className="text-sm text-gray-500 truncate">
+              {user?.role === 'manager' ? 'Gestor' : 'Responsável'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="font-medium">Sair</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
