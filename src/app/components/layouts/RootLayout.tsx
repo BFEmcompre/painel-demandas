@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '../sidebar/Sidebar';
 import { Header } from '../header/Header';
 import { AlertNotification } from '../notifications/AlertNotification';
@@ -13,23 +13,30 @@ type AlertTask = {
 export function RootLayout() {
   const navigate = useNavigate();
 
-  const lastNotificationRef = useRef('');
   const [loading, setLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
   const [currentUserId, setCurrentUserId] = useState('');
 
-useEffect(() => {
-  requestNotificationPermission();
-  checkUserAndOverdueTasks();
-
-  const interval = setInterval(() => {
+  useEffect(() => {
+    requestNotificationPermission();
     checkUserAndOverdueTasks();
-  }, 60000);
 
-  return () => clearInterval(interval);
-}, []);
+    const interval = setInterval(() => {
+      checkUserAndOverdueTasks();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }
 
   async function checkUserAndOverdueTasks() {
     const { data: authData } = await supabase.auth.getUser();
@@ -38,14 +45,6 @@ useEffect(() => {
       navigate('/login');
       return;
     }
-
-async function requestNotificationPermission() {
-  if (!('Notification' in window)) return;
-
-  if (Notification.permission === 'default') {
-    await Notification.requestPermission();
-  }
-}
 
     const userId = authData.user.id;
     setCurrentUserId(userId);
@@ -121,26 +120,11 @@ async function requestNotificationPermission() {
     setAlertMessage(message);
     setShowAlert(true);
 
-	if ('Notification' in window && Notification.permission === 'granted') {
-  new Notification('🚨 Tarefa atrasada', {
-    body: message,
-    tag: `tarefa-atrasada-${Date.now()}`,
-    requireInteraction: true,
-  });
-}    
-
-    const notificationKey = `${userId}-${notViewedTasks.map((task) => task.id).join('-')}-${new Date().getMinutes()}`;
-
-    if (
-      'Notification' in window &&
-      Notification.permission === 'granted' &&
-      lastNotificationRef.current !== notificationKey
-    ) {
-      lastNotificationRef.current = notificationKey;
-
-      new Notification('🚨 Demanda atrasada', {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('🚨 Tarefa atrasada', {
         body: message,
-        icon: '/vite.svg',
+        tag: `tarefa-atrasada-${Date.now()}`,
+        requireInteraction: true,
       });
     }
   }
