@@ -7,58 +7,85 @@ import { supabase } from '../../lib/supabase';
 
 export function RootLayout() {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
-    checkUser();
+    checkUserAndOverdueTasks();
+
+    const interval = setInterval(() => {
+      checkUserAndOverdueTasks();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  async function checkUser() {
-    const { data } = await supabase.auth.getUser();
+  async function checkUserAndOverdueTasks() {
+    const { data: authData } = await supabase.auth.getUser();
 
-    if (!data.user) {
+    if (!authData.user) {
       navigate('/login');
       return;
     }
 
-    setUser(data.user);
     setLoading(false);
 
-    checkOverdueTasks(data.user.id);
-  }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .single();
 
-  // 🔥 ALERTA REAL DE TAREFAS ATRASADAS
-  async function checkOverdueTasks(userId: string) {
+    if (profile?.role !== 'manager') return;
+
     const now = new Date().toISOString();
 
-    const { data } = await supabase
+    const { data: overdueTasks, error } = await supabase
       .from('tasks')
-      .select('*')
+      .select('id, title')
       .eq('status', 'pending')
       .lt('deadline', now);
 
-    if (data && data.length > 0) {
-      setAlertMessage(
-        `Atenção: ${data.length} tarefa(s) atrasada(s).`
-      );
-      setShowAlert(true);
+    if (error || !overdueTasks || overdueTasks.length === 0) return;
 
-      // opcional: já marcar como atrasado
-      await supabase
-        .from('tasks')
-        .update({ status: 'overdue' })
-        .eq('status', 'pending')
-        .lt('deadline', now);
+    const taskIds = overdueTasks.map((task) => task.id);
+
+    await supabase
+      .from('tasks')
+      .update({ status: 'overdue' })
+      .in('id', taskIds);
+
+    const message =
+      overdueTasks.length === 1
+        ? `A tarefa "${overdueTasks[0].title}" está atrasada.`
+        : `${overdueTasks.length} tarefas estão atrasadas.`;
+
+    setAlertMessage(message);
+    setShowAlert(true);
+
+    showBrowserNotification(message);
+  }
+
+  async function showBrowserNotification(message: string) {
+    if (!('Notification' in window)) return;
+
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+
+    if (Notification.permission === 'granted') {
+      new Notification('Painel de Demandas', {
+        body: message,
+      });
     }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p>Carregando...</p>
+        Carregando...
       </div>
     );
   }
