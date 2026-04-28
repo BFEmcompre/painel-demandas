@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Card } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -33,6 +34,7 @@ type Responsible = {
 };
 
 export function History() {
+const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [responsibles, setResponsibles] = useState<Responsible[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,23 +131,6 @@ const matchesResponsible =
       </span>
     );
   };
-
-  const handleViewPhotos = async (taskId: string) => {
-  const { data, error } = await supabase
-    .from('task_photos')
-    .select('photo_url')
-    .eq('task_id', taskId)
-    .order('created_at', { ascending: true });
-
-  if (error || !data || data.length === 0) {
-    alert('Nenhuma foto encontrada para esta tarefa');
-    return;
-  }
-
-  data.forEach((photo) => {
-    window.open(photo.photo_url, '_blank');
-  });
-};
 
   return (
     <div className="space-y-6">
@@ -270,13 +255,13 @@ const matchesResponsible =
 
 <TableCell>
   {task.photo_url ? (
-    <button
-      type="button"
-      onClick={() => handleViewPhotos(task.id)}
-      className="text-blue-600 text-sm hover:underline"
-    >
-      Ver fotos
-    </button>
+<button
+  type="button"
+  onClick={() => navigate(`/tarefa/${task.id}`)}
+  className="text-blue-600 text-sm hover:underline"
+>
+  Ver fotos
+</button>
   ) : (
     '-'
   )}
