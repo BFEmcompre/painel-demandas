@@ -39,7 +39,7 @@ export function History() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
-  const [isAdmin, setIsAdmin] = useState(false);
+const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     loadData();
@@ -67,21 +67,8 @@ setIsAdmin(adminAccess);
 let tasksQuery = supabase.from('tasks').select('*');
 
 if (!adminAccess) {
-    const { data: relations } = await supabase
-      .from('task_responsibles')
-      .select('task_id')
-      .eq('responsible_id', userId);
-
-    const taskIds = relations?.map((item) => item.task_id) || [];
-
-    if (taskIds.length === 0) {
-      setTasks([]);
-      setResponsibles([]);
-      return;
-    }
-
-    tasksQuery = tasksQuery.in('id', taskIds);
-  }
+  tasksQuery = tasksQuery.eq('responsible_id', userId);
+}
 
   const { data: tasksData } = await tasksQuery.order('date', {
     ascending: false,
@@ -109,7 +96,7 @@ const matchesResponsible =
   task.responsible_id === responsibleFilter;
 
   const today = new Date();
-  const taskDate = new Date(`${task.date}T00:00:00`);
+  const taskDate = new Date(task.date + 'T12:00:00');
 
   const diffInDays = Math.floor(
     (today.getTime() - taskDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -182,7 +169,7 @@ const matchesResponsible =
             </SelectContent>
           </Select>
 
-{isAdmin && (
+{isAdmin === true && (
   <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
     <SelectTrigger className="w-full md:w-48">
       <SelectValue placeholder="Responsável" />
