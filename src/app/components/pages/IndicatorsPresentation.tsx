@@ -36,9 +36,25 @@ const [isFullscreen, setIsFullscreen] = useState(false);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    loadPresentation();
-  }, []);
+useEffect(() => {
+  loadPresentation();
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'ArrowRight') {
+      nextSlide();
+    }
+
+    if (e.key === 'ArrowLeft') {
+      previousSlide();
+    }
+  }
+
+  window.addEventListener('keydown', handleKeyDown);
+
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, []);
 
   function getDate(offset: number) {
     const date = new Date();
