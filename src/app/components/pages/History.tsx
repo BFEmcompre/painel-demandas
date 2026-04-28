@@ -222,7 +222,7 @@ const matchesResponsible =
                 filteredTasks.map((task) => (
                   <TableRow key={task.id}>
 <TableCell>
-  {new Date(task.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+  task.date.split('-').reverse().join('/')
 </TableCell>
 
                     <TableCell>
