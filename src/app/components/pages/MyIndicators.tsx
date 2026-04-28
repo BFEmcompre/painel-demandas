@@ -9,10 +9,19 @@ type Platform = {
   name: string;
   responsible_id: string;
   responsible_name: string;
+  display_order: number;
+};
+type Section = {
+  id: string;
+  platform_id: string;
+  name: string;
+  display_order: number;
 };
 
 export function MyIndicators() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [sections, setSections] = useState<Record<string, Section[]>>({});
+const [newSectionName, setNewSectionName] = useState('');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
 
@@ -50,52 +59,91 @@ export function MyIndicators() {
       .order('display_order');
 
     setPlatforms(data || []);
+
+const { data: sectionsData } = await supabase
+  .from('platform_indicator_sections')
+  .select('*')
+  .eq('responsible_id', profile.id)
+  .order('display_order');
+
+const grouped: Record<string, Section[]> = {};
+
+sectionsData?.forEach((section) => {
+  if (!grouped[section.platform_id]) {
+    grouped[section.platform_id] = [];
+  }
+  grouped[section.platform_id].push(section);
+});
+
+setSections(grouped);
+
   }
 
-  async function handleUpload(platform: Platform, files: FileList | null) {
-    if (!files || files.length === 0) return;
+async function handleUploadWithSection(
+  platform: Platform,
+  sectionId: string,
+  files: FileList | null
+) {
+  if (!files || files.length === 0) return;
 
-    const uploads = [];
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) return;
 
-    for (const file of Array.from(files)) {
-      const extension = file.name.split('.').pop() || 'jpg';
-      const fileName = `${platform.id}-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}.${extension}`;
+  const uploads = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from('platform-indicators')
-        .upload(fileName, file);
+  for (const file of Array.from(files)) {
+    const fileName = `${Date.now()}-${file.name}`;
 
-      if (uploadError) {
-        alert('Erro ao enviar imagem');
-        return;
-      }
-
-      const { data } = supabase.storage
-        .from('platform-indicators')
-        .getPublicUrl(fileName);
-
-      uploads.push({
-        platform_id: platform.id,
-        responsible_id: userId,
-        responsible_name: userName,
-        image_url: data.publicUrl,
-        reference_date: getToday(),
-      });
-    }
-
-    const { error } = await supabase
-      .from('platform_indicator_images')
-      .insert(uploads);
+    const { error } = await supabase.storage
+      .from('platform-indicators')
+      .upload(fileName, file);
 
     if (error) {
-      alert('Erro ao salvar indicadores');
+      alert('Erro ao enviar');
       return;
     }
 
-    alert('Imagem(ns) enviada(s) com sucesso!');
+    const { data } = supabase.storage
+      .from('platform-indicators')
+      .getPublicUrl(fileName);
+
+    uploads.push({
+      platform_id: platform.id,
+      responsible_id: authData.user.id,
+      section_id: sectionId,
+      image_url: data.publicUrl,
+      reference_date: new Date().toLocaleDateString('sv-SE', {
+        timeZone: 'America/Sao_Paulo',
+      }),
+    });
   }
+
+  await supabase.from('platform_indicator_images').insert(uploads);
+
+  alert('Enviado!');
+}
+
+async function handleCreateSection(platformId: string) {
+  if (!newSectionName) return;
+
+  const { data: authData } = await supabase.auth.getUser();
+
+  if (!authData?.user) return;
+
+  const { error } = await supabase
+    .from('platform_indicator_sections')
+    .insert({
+      platform_id: platformId,
+      responsible_id: authData.user.id,
+      name: newSectionName,
+      display_order: Date.now(),
+    });
+
+  if (!error) {
+    setNewSectionName('');
+    loadData();
+  }
+}
 
   return (
     <div className="space-y-6">
@@ -109,27 +157,57 @@ export function MyIndicators() {
           Nenhuma plataforma vinculada a você.
         </Card>
       ) : (
-        platforms.map((platform) => (
-          <Card key={platform.id} className="p-6 flex justify-between items-center">
-            <div>
-              <h2 className="font-semibold text-lg">{platform.name}</h2>
-              <p className="text-sm text-gray-500">Responsável: {platform.responsible_name}</p>
-            </div>
+platforms.map((platform) => (
+  <Card key={platform.id} className="p-6 space-y-4">
+    <div className="flex justify-between items-center">
+      <div>
+        <h2 className="font-semibold text-lg">{platform.name}</h2>
+      </div>
+    </div>
 
-<label className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">
-  <Upload className="w-4 h-4" />
-  Enviar prints
+    {/* Criar categoria */}
+    <div className="flex gap-2">
+      <input
+        value={newSectionName}
+        onChange={(e) => setNewSectionName(e.target.value)}
+        placeholder="Nova categoria"
+        className="border px-3 py-2 rounded w-full"
+      />
+      <Button onClick={() => handleCreateSection(platform.id)}>
+        Criar
+      </Button>
+    </div>
 
-  <input
-    type="file"
-    accept="image/*"
-    multiple
-    className="hidden"
-    onChange={(e) => handleUpload(platform, e.target.files)}
-  />
-</label>
-          </Card>
-        ))
+    {/* Lista de categorias */}
+    {(sections[platform.id] || []).map((section) => (
+      <div
+        key={section.id}
+        className="flex justify-between items-center border rounded p-3"
+      >
+        <span>{section.name}</span>
+
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) =>
+              handleUploadWithSection(
+                platform,
+                section.id,
+                e.target.files
+              )
+            }
+          />
+
+          <div className="bg-blue-600 text-white px-3 py-1 rounded">
+            Upload
+          </div>
+        </label>
+      </div>
+    ))}
+  </Card>
+))
       )}
     </div>
   );

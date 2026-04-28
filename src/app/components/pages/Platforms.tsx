@@ -27,6 +27,7 @@ export function Platforms() {
   const [name, setName] = useState('');
   const [responsibleId, setResponsibleId] = useState('');
   const [displayOrder, setDisplayOrder] = useState('0');
+const [uploadDeadline, setUploadDeadline] = useState('09:00');
 
   useEffect(() => {
     loadData();
@@ -62,8 +63,9 @@ export function Platforms() {
       name,
       responsible_id: responsible.id,
       responsible_name: responsible.name,
-      display_order: Number(displayOrder || 0),
-      active: true,
+display_order: Number(displayOrder || 0),
+upload_deadline: uploadDeadline,
+active: true,
     });
 
     if (error) {
@@ -85,7 +87,7 @@ export function Platforms() {
       </div>
 
       <Card className="p-6">
-        <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           <div className="space-y-2">
             <Label>Plataforma</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -115,6 +117,14 @@ export function Platforms() {
               onChange={(e) => setDisplayOrder(e.target.value)}
             />
           </div>
+	<div className="space-y-2">
+  <Label>Enviar até</Label>
+  <Input
+    type="time"
+    value={uploadDeadline}
+    onChange={(e) => setUploadDeadline(e.target.value)}
+  />
+</div>
 
 <Button
   variant="outline"

@@ -12,12 +12,21 @@ type Platform = {
 type IndicatorImage = {
   id: string;
   platform_id: string;
+  section_id: string | null;
   image_url: string;
   reference_date: string;
 };
 
+type Section = {
+  id: string;
+  platform_id: string;
+  name: string;
+  display_order: number;
+};
+
 type Slide = {
   platform: Platform;
+  section: Section;
   yesterdayImages: IndicatorImage[];
   todayImages: IndicatorImage[];
 };
@@ -55,24 +64,41 @@ const [isFullscreen, setIsFullscreen] = useState(false);
       .select('*')
       .in('reference_date', [today, yesterday]);
 
-    const result =
-      platforms?.map((platform) => ({
+       const { data: sections } = await supabase
+  .from('platform_indicator_sections')
+  .select('id, platform_id, name, display_order')
+  .eq('active', true)
+  .order('display_order');
+
+const result =
+  sections
+    ?.map((section) => {
+      const platform = platforms?.find((p) => p.id === section.platform_id);
+
+      if (!platform) return null;
+
+      return {
         platform,
+        section,
         yesterdayImages:
           images?.filter(
             (img) =>
               img.platform_id === platform.id &&
+              img.section_id === section.id &&
               img.reference_date === yesterday
           ) || [],
         todayImages:
           images?.filter(
             (img) =>
               img.platform_id === platform.id &&
+              img.section_id === section.id &&
               img.reference_date === today
           ) || [],
-      })) || [];
+      };
+    })
+    .filter(Boolean) || [];
 
-    setSlides(result);
+setSlides(result as Slide[]);
   }
 
   const currentSlide = slides[currentIndex];
@@ -103,7 +129,9 @@ if (isFullscreen && currentSlide) {
     <div className="fixed inset-0 bg-black z-50 p-6 flex flex-col">
       <div className="flex justify-between items-center text-white mb-4">
         <div>
-          <h1 className="text-3xl font-semibold">{currentSlide.platform.name}</h1>
+          <h1 className="text-3xl font-semibold">
+  {currentSlide.platform.name} - {currentSlide.section.name}
+</h1>
           <p>{currentSlide.platform.responsible_name}</p>
         </div>
 
@@ -160,9 +188,9 @@ if (isFullscreen && currentSlide) {
           <h1 className="text-3xl font-semibold text-gray-900">
             Apresentação de Indicadores
           </h1>
-          <p className="text-gray-500 mt-1">
-            {currentSlide.platform.name} — {currentSlide.platform.responsible_name}
-          </p>
+<p className="text-gray-500 mt-1">
+  {currentSlide.platform.name} — {currentSlide.section.name} — {currentSlide.platform.responsible_name}
+</p>
         </div>
 
         <div className="flex gap-2">
