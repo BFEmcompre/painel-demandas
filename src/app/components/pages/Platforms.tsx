@@ -28,6 +28,8 @@ export function Platforms() {
   const [responsibleId, setResponsibleId] = useState('');
   const [displayOrder, setDisplayOrder] = useState('0');
 const [uploadDeadline, setUploadDeadline] = useState('09:00');
+const [uploadFilter, setUploadFilter] = useState('all');
+const [todayUploads, setTodayUploads] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -43,10 +45,22 @@ const [uploadDeadline, setUploadDeadline] = useState('09:00');
     const { data: platformData } = await supabase
       .from('platforms')
       .select('*')
-      .order('display_order');
+      .order('display_order', { ascending: true });
 
     setResponsibles(respData || []);
     setPlatforms(platformData || []);
+	
+    const today = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
+
+const { data: uploadsData } = await supabase
+  .from('platform_indicator_images')
+  .select('platform_id, responsible_id')
+  .eq('reference_date', today);
+
+setTodayUploads(uploadsData || []);
+
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -78,6 +92,20 @@ active: true,
     setDisplayOrder('0');
     loadData();
   }
+
+function hasSentToday(platform: Platform) {
+  return todayUploads.some(
+    (upload) =>
+      upload.platform_id === platform.id &&
+      upload.responsible_id === platform.responsible_id
+  );
+}
+
+const filteredPlatforms = platforms.filter((platform) => {
+  if (uploadFilter === 'sent') return hasSentToday(platform);
+  if (uploadFilter === 'pending') return !hasSentToday(platform);
+  return true;
+});
 
   return (
     <div className="space-y-6">
@@ -126,39 +154,6 @@ active: true,
   />
 </div>
 
-<Button
-  variant="outline"
-  onClick={async () => {
-    const today = new Date().toLocaleDateString('sv-SE', {
-      timeZone: 'America/Sao_Paulo',
-    });
-
-    const { data: platformsData } = await supabase
-      .from('platforms')
-      .select('*');
-
-    const { data: images } = await supabase
-      .from('platform_indicator_images')
-      .select('*')
-      .eq('reference_date', today);
-
-    const pending = platformsData?.filter((p) => {
-      return !images?.some(
-        (img) =>
-          img.platform_id === p.id &&
-          img.responsible_id === p.responsible_id
-      );
-    });
-
-    alert(
-      pending?.length === 0
-        ? 'Todos enviaram'
-        : pending?.map((p) => `${p.name} - ${p.responsible_name}`).join('\n')
-    );
-  }}
->
-  Ver quem não enviou
-</Button>
 
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
             Cadastrar
@@ -169,8 +164,34 @@ active: true,
       <Card className="p-6">
         <h2 className="font-semibold mb-4">Plataformas cadastradas</h2>
 
+        <div className="flex gap-2 mb-4">
+  <Button
+    type="button"
+    variant={uploadFilter === 'all' ? 'default' : 'outline'}
+    onClick={() => setUploadFilter('all')}
+  >
+    Todos
+  </Button>
+
+  <Button
+    type="button"
+    variant={uploadFilter === 'sent' ? 'default' : 'outline'}
+    onClick={() => setUploadFilter('sent')}
+  >
+    Enviados hoje
+  </Button>
+
+  <Button
+    type="button"
+    variant={uploadFilter === 'pending' ? 'default' : 'outline'}
+    onClick={() => setUploadFilter('pending')}
+  >
+    Não enviados
+  </Button>
+</div>
+
         <div className="space-y-3">
-          {platforms.map((platform) => (
+          {filteredPlatforms.map((platform) => (
             <div key={platform.id} className="border rounded-lg p-4 flex justify-between">
               <div key={platform.id} className="border p-4 rounded flex justify-between items-center">
   <div>
@@ -178,6 +199,11 @@ active: true,
     <p className="text-sm text-gray-500">
       Responsável: {platform.responsible_name}
     </p>
+      {hasSentToday(platform) ? (
+  <p className="text-green-600 text-sm font-medium">✔ Enviado hoje</p>
+) : (
+  <p className="text-red-600 text-sm font-medium">Pendente</p>
+)}
   </div>
 
   <Button
