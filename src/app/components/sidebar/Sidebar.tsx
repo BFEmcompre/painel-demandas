@@ -8,6 +8,8 @@ import {
   Users,
   Settings,
   LogOut,
+  BarChart3,
+  Presentation,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -16,11 +18,14 @@ const managerMenuItems = [
   { icon: PlusSquare, label: 'Criar Demanda', path: '/criar-demanda' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Users, label: 'Responsáveis', path: '/responsaveis' },
+  { icon: BarChart3, label: 'Indicadores', path: '/indicadores' },
+  { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
 ];
 
 const responsibleMenuItems = [
   { icon: CheckSquare, label: 'Minhas Demandas', path: '/minhas-demandas' },
+  { icon: BarChart3, label: 'Meus Indicadores', path: '/meus-indicadores' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
 ];

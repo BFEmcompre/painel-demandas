@@ -9,6 +9,9 @@ import { History } from "./components/pages/History";
 import { Responsibles } from "./components/pages/Responsibles";
 import { Settings } from "./components/pages/Settings";
 import { RegisterPage } from "./components/pages/RegisterPage";
+import { Platforms } from "./components/pages/Platforms";
+import { MyIndicators } from "./components/pages/MyIndicators";
+import { IndicatorsPresentation } from "./components/pages/IndicatorsPresentation";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +35,9 @@ export const router = createBrowserRouter([
       { path: "historico", Component: History },
       { path: "responsaveis", Component: Responsibles },
       { path: "configuracoes", Component: Settings },
+      { path: "indicadores", Component: Platforms },
+      { path: "meus-indicadores", Component: MyIndicators },
+      { path: "indicadores/apresentacao", Component: IndicatorsPresentation },
     ],
   },
 ]);
