@@ -286,7 +286,7 @@ platforms.map((platform) => (
   </Button>
         </div>
       </div>
-    ))}
+        ))}
   </Card>
 ))}
       )}
