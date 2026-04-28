@@ -174,7 +174,7 @@ export function History() {
                       <p className="text-sm text-gray-500">{task.description}</p>
                     </TableCell>
 
-                    <TableCell>{task.responsible_name}</TableCell>
+<TableCell>{task.responsible_name}</TableCell>
 
 <TableCell>
   {new Date(task.deadline).toLocaleTimeString('pt-BR', {
@@ -193,18 +193,23 @@ export function History() {
       })
     : '-'}
 </TableCell>
-                      {task.photo_url ? (
-                        <a
-                          href={task.photo_url}
-                          target="_blank"
-                          className="text-blue-600 text-sm"
-                        >
-                          Ver foto
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
+
+<TableCell>{getStatusBadge(task.status)}</TableCell>
+
+<TableCell>
+  {task.photo_url ? (
+    <a
+      href={task.photo_url}
+      target="_blank"
+      rel="noreferrer"
+      className="text-blue-600 text-sm"
+    >
+      Ver foto
+    </a>
+  ) : (
+    '-'
+  )}
+</TableCell>
                   </TableRow>
                 ))
               )}
