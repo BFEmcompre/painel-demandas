@@ -38,14 +38,26 @@ const [isFullscreen, setIsFullscreen] = useState(false);
 
 useEffect(() => {
   loadPresentation();
+}, []);
 
+useEffect(() => {
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'ArrowRight') {
-      nextSlide();
+      e.preventDefault();
+      setCurrentIndex((current) =>
+        current + 1 >= slides.length ? 0 : current + 1
+      );
     }
 
     if (e.key === 'ArrowLeft') {
-      previousSlide();
+      e.preventDefault();
+      setCurrentIndex((current) =>
+        current - 1 < 0 ? slides.length - 1 : current - 1
+      );
+    }
+
+    if (e.key === 'Escape') {
+      setIsFullscreen(false);
     }
   }
 
@@ -54,7 +66,7 @@ useEffect(() => {
   return () => {
     window.removeEventListener('keydown', handleKeyDown);
   };
-}, []);
+}, [slides.length]);
 
   function getDate(offset: number) {
     const date = new Date();
