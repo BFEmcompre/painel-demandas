@@ -159,7 +159,13 @@ if (uploadError) {
       .update({
         status: 'completed',
         photo_url: firstPhotoUrl,
-        completed_at: new Date().toISOString(),
+        const now = new Date();
+
+const completedAt = new Date(
+  now.getTime() - now.getTimezoneOffset() * 60000
+).toISOString();
+
+completed_at: completedAt,
         observation,
       })
       .eq('id', task.id);
