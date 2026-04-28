@@ -97,6 +97,7 @@ if (sentError) {
 }
 
 setSentImages(sentData || []);
+}
 
 async function handleUploadWithSection(
   platform: Platform,
