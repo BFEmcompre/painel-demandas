@@ -176,7 +176,6 @@ export function History() {
 
                     <TableCell>{task.responsible_name}</TableCell>
 
-                    <TableCell>
 <TableCell>
   {new Date(task.deadline).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
@@ -194,10 +193,6 @@ export function History() {
       })
     : '-'}
 </TableCell>
-
-                    <TableCell>{getStatusBadge(task.status)}</TableCell>
-
-                    <TableCell>
                       {task.photo_url ? (
                         <a
                           href={task.photo_url}
