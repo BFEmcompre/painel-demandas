@@ -105,14 +105,20 @@ export function TaskDetails() {
     loadTask();
   };
 
-  const handleCompleteTask = async () => {
-    const hasAnyPhoto = savedPhotos.length > 0 || newPhotos.length > 0;
+const handleCompleteTask = async () => {
+  const hasAnyPhoto = savedPhotos.length > 0 || newPhotos.length > 0;
 
-    if (!hasAnyPhoto) {
-      toast.error('Envie pelo menos uma foto antes de concluir');
-      return;
-    }
+  if (!hasAnyPhoto) {
+    toast.error('Envie pelo menos uma foto antes de concluir');
+    return;
+  }
 
+  const hasIncompleteChecklist = checklist.some((item) => !item.completed);
+
+  if (hasIncompleteChecklist) {
+    toast.error('Marque todos os itens do checklist antes de concluir a tarefa');
+    return;
+  }
 
     const uploadedPhotos: { task_id: string; photo_url: string }[] = [];
 

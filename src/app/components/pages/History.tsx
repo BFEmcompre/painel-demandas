@@ -38,34 +38,81 @@ export function History() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
+  const [periodFilter, setPeriodFilter] = useState<string>('all');
 
   useEffect(() => {
     loadData();
   }, []);
 
-  async function loadData() {
-    const { data: tasksData } = await supabase.from('tasks').select('*');
+async function loadData() {
+  const { data: authData } = await supabase.auth.getUser();
 
-    const { data: respData } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .eq('role', 'responsible');
+  if (!authData?.user) return;
 
-    setTasks(tasksData || []);
-    setResponsibles(respData || []);
+  const userId = authData.user.id;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, name, role')
+    .eq('id', userId)
+    .single();
+
+  let tasksQuery = supabase.from('tasks').select('*');
+
+  if (profile?.role !== 'admin') {
+    const { data: relations } = await supabase
+      .from('task_responsibles')
+      .select('task_id')
+      .eq('responsible_id', userId);
+
+    const taskIds = relations?.map((item) => item.task_id) || [];
+
+    if (taskIds.length === 0) {
+      setTasks([]);
+      setResponsibles([]);
+      return;
+    }
+
+    tasksQuery = tasksQuery.in('id', taskIds);
   }
 
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.responsible_name.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-    const matchesResponsible =
-      responsibleFilter === 'all' || task.responsible_id === responsibleFilter;
-
-    return matchesSearch && matchesStatus && matchesResponsible;
+  const { data: tasksData } = await tasksQuery.order('date', {
+    ascending: false,
   });
+
+  const { data: respData } = await supabase
+    .from('profiles')
+    .select('id, name')
+    .eq('role', 'responsible');
+
+  setTasks(tasksData || []);
+  setResponsibles(respData || []);
+}
+
+const filteredTasks = tasks.filter((task) => {
+  const matchesSearch =
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.responsible_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+
+  const matchesResponsible =
+    responsibleFilter === 'all' || task.responsible_id === responsibleFilter;
+
+  const today = new Date();
+  const taskDate = new Date(`${task.date}T00:00:00`);
+
+  const diffInDays = Math.floor(
+    (today.getTime() - taskDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const matchesPeriod =
+    periodFilter === 'all' ||
+    (periodFilter === '7days' && diffInDays <= 7) ||
+    (periodFilter === '30days' && diffInDays <= 30);
+
+  return matchesSearch && matchesStatus && matchesResponsible && matchesPeriod;
+});
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -126,19 +173,30 @@ export function History() {
             </SelectContent>
           </Select>
 
-          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {responsibles.map((resp) => (
-                <SelectItem key={resp.id} value={resp.id}>
-                  {resp.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+<Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+  <SelectTrigger className="w-full md:w-48">
+    <SelectValue placeholder="Responsável" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">Todos</SelectItem>
+    {responsibles.map((resp) => (
+      <SelectItem key={resp.id} value={resp.id}>
+        {resp.name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+<Select value={periodFilter} onValueChange={setPeriodFilter}>
+  <SelectTrigger className="w-full md:w-48">
+    <SelectValue placeholder="Período" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">Todos</SelectItem>
+    <SelectItem value="7days">Últimos 7 dias</SelectItem>
+    <SelectItem value="30days">Últimos 30 dias</SelectItem>
+  </SelectContent>
+</Select>
         </div>
 
         <div className="border rounded-lg overflow-hidden">
