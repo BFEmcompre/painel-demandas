@@ -18,6 +18,11 @@ type Section = {
   display_order: number;
 };
 
+type SentImage = {
+  platform_id: string;
+  section_id: string | null;
+};
+
 export function MyIndicators() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [sections, setSections] = useState<Record<string, Section[]>>({});
@@ -25,6 +30,7 @@ const [newSectionName, setNewSectionName] = useState('');
 const [newSectionOrder, setNewSectionOrder] = useState('');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
+const [sentImages, setSentImages] = useState<SentImage[]>([]);
 
   useEffect(() => {
     loadData();
@@ -77,8 +83,20 @@ sectionsData?.forEach((section) => {
 });
 
 setSections(grouped);
+const today = getToday();
 
-  }
+const { data: sentData, error: sentError } = await supabase
+  .from('platform_indicator_images')
+  .select('platform_id, section_id')
+  .eq('responsible_id', profile.id)
+  .eq('reference_date', today);
+
+if (sentError) {
+  console.error(sentError);
+  return;
+}
+
+setSentImages(sentData || []);
 
 async function handleUploadWithSection(
   platform: Platform,
@@ -156,6 +174,30 @@ async function handleCreateSection(platformId: string) {
   }
 }
 
+async function handleDeleteSection(sectionId: string) {
+  const confirmDelete = confirm('Deseja excluir esta categoria?');
+
+  if (!confirmDelete) return;
+
+  const { error } = await supabase
+    .from('platform_indicator_sections')
+    .delete()
+    .eq('id', sectionId);
+
+  if (error) {
+    alert(error.message || 'Erro ao excluir categoria');
+    return;
+  }
+
+  loadData();
+}
+
+function hasSentImage(platformId: string, sectionId: string) {
+  return sentImages.some(
+    (img) => img.platform_id === platformId && img.section_id === sectionId
+  );
+}
+
   return (
     <div className="space-y-6">
       <div>
@@ -189,7 +231,7 @@ platforms.map((platform) => (
   type="number"
   value={newSectionOrder}
   onChange={(e) => setNewSectionOrder(e.target.value)}
-  placeholder="Ordem"
+  placeholder="Ordem da categoria"
   className="border px-3 py-2 rounded w-24"
 />
       <Button onClick={() => handleCreateSection(platform.id)}>
@@ -200,30 +242,50 @@ platforms.map((platform) => (
     {/* Lista de categorias */}
     {(sections[platform.id] || []).map((section) => (
       <div
-        key={section.id}
-        className="flex justify-between items-center border rounded p-3"
-      >
-        <span>{section.name}</span>
+  key={section.id}
+  className="flex justify-between items-center border rounded p-3"
+>
+  <div>
+    <span className="font-medium">{section.display_order} - {section.name}</span>
+  </div>
 
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) =>
-              handleUploadWithSection(
-                platform,
-                section.id,
-                e.target.files
-              )
-            }
-          />
+  <div className="flex items-center gap-2">
+{hasSentImage(platform.id, section.id) ? (
+  <span className="text-green-600 text-sm font-medium">
+    ✔ Enviado hoje
+  </span>
+) : null}
 
-          <div className="bg-blue-600 text-white px-3 py-1 rounded">
-            Upload
-          </div>
-        </label>
-      </div>
+  <label className="cursor-pointer">
+  <input
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={(e) =>
+      handleUploadWithSection(platform, section.id, e.target.files)
+    }
+  />
+
+<div
+  className={`px-3 py-1 rounded text-white ${
+    hasSentImage(platform.id, section.id)
+      ? 'bg-yellow-500'
+      : 'bg-blue-600'
+  }`}
+>
+  {hasSentImage(platform.id, section.id) ? 'Substituir' : 'Upload'}
+</div>
+</label>
+
+  <Button
+    type="button"
+    variant="outline"
+    onClick={() => handleDeleteSection(section.id)}
+  >
+    Excluir
+  </Button>
+</div>
+</div>
     ))}
   </Card>
 ))
