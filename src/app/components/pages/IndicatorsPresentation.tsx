@@ -23,6 +23,7 @@ type Slide = {
 };
 
 export function IndicatorsPresentation() {
+const [isFullscreen, setIsFullscreen] = useState(false);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -96,6 +97,62 @@ export function IndicatorsPresentation() {
     );
   }
 
+
+if (isFullscreen && currentSlide) {
+  return (
+    <div className="fixed inset-0 bg-black z-50 p-6 flex flex-col">
+      <div className="flex justify-between items-center text-white mb-4">
+        <div>
+          <h1 className="text-3xl font-semibold">{currentSlide.platform.name}</h1>
+          <p>{currentSlide.platform.responsible_name}</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={previousSlide}>
+            Anterior
+          </Button>
+          <Button variant="outline" onClick={nextSlide}>
+            Próximo
+          </Button>
+          <Button onClick={() => setIsFullscreen(false)}>
+            Sair
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+        <div className="bg-white rounded-lg p-3 flex flex-col min-h-0">
+          <h2 className="text-center font-semibold mb-2">Ontem</h2>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            {currentSlide.yesterdayImages[0] ? (
+              <img
+                src={currentSlide.yesterdayImages[0].image_url}
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <p className="text-gray-400">Sem imagem de ontem</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg p-3 flex flex-col min-h-0">
+          <h2 className="text-center font-semibold mb-2">Hoje</h2>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            {currentSlide.todayImages[0] ? (
+              <img
+                src={currentSlide.todayImages[0].image_url}
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <p className="text-gray-400">Sem imagem de hoje</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -115,6 +172,9 @@ export function IndicatorsPresentation() {
           <Button onClick={nextSlide} className="bg-blue-600 hover:bg-blue-700">
             Próximo
           </Button>
+  	  <Button variant="outline" onClick={() => setIsFullscreen(true)}>
+  	    Tela cheia
+	   </Button>
         </div>
       </div>
 

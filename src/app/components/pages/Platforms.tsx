@@ -14,8 +14,10 @@ type Responsible = {
 type Platform = {
   id: string;
   name: string;
+  responsible_id: string;
   responsible_name: string;
   display_order: number;
+  upload_deadline: string;
   active: boolean;
 };
 
@@ -114,6 +116,40 @@ export function Platforms() {
             />
           </div>
 
+<Button
+  variant="outline"
+  onClick={async () => {
+    const today = new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    const { data: platformsData } = await supabase
+      .from('platforms')
+      .select('*');
+
+    const { data: images } = await supabase
+      .from('platform_indicator_images')
+      .select('*')
+      .eq('reference_date', today);
+
+    const pending = platformsData?.filter((p) => {
+      return !images?.some(
+        (img) =>
+          img.platform_id === p.id &&
+          img.responsible_id === p.responsible_id
+      );
+    });
+
+    alert(
+      pending?.length === 0
+        ? 'Todos enviaram'
+        : pending?.map((p) => `${p.name} - ${p.responsible_name}`).join('\n')
+    );
+  }}
+>
+  Ver quem não enviou
+</Button>
+
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
             Cadastrar
           </Button>
@@ -126,10 +162,31 @@ export function Platforms() {
         <div className="space-y-3">
           {platforms.map((platform) => (
             <div key={platform.id} className="border rounded-lg p-4 flex justify-between">
-              <div>
-                <p className="font-medium">{platform.name}</p>
-                <p className="text-sm text-gray-500">Responsável: {platform.responsible_name}</p>
-              </div>
+              <div key={platform.id} className="border p-4 rounded flex justify-between items-center">
+  <div>
+    <p className="font-medium">{platform.name}</p>
+    <p className="text-sm text-gray-500">
+      Responsável: {platform.responsible_name}
+    </p>
+  </div>
+
+  <Button
+    variant="outline"
+    onClick={async () => {
+      const newName = prompt('Novo nome', platform.name);
+      if (!newName) return;
+
+      await supabase
+        .from('platforms')
+        .update({ name: newName })
+        .eq('id', platform.id);
+
+      loadData();
+    }}
+  >
+    Editar
+  </Button>
+</div>
               <span className="text-sm text-gray-500">Ordem: {platform.display_order}</span>
             </div>
           ))}

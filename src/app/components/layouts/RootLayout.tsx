@@ -56,6 +56,8 @@ export function RootLayout() {
       .eq('id', userId)
       .single();
 
+await checkPendingIndicators(userId, profile?.role);
+
     const { data: allPendingTasks } = await supabase
       .from('tasks')
       .select('id, title, deadline, status')
@@ -154,6 +156,42 @@ console.log('Mensagem:', message);
       </div>
     );
   }
+
+async function checkPendingIndicators(userId: string, role?: string) {
+  if (role !== 'manager') return;
+
+  const today = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  const { data: platforms } = await supabase
+    .from('platforms')
+    .select('*');
+
+  const { data: images } = await supabase
+    .from('platform_indicator_images')
+    .select('*')
+    .eq('reference_date', today);
+
+  const pending = platforms?.filter((p) => {
+    return !images?.some(
+      (img) =>
+        img.platform_id === p.id &&
+        img.responsible_id === p.responsible_id
+    );
+  });
+
+  if (!pending || pending.length === 0) return;
+
+  const message = `${pending.length} indicadores não enviados`;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('📊 Indicadores pendentes', {
+      body: message,
+      requireInteraction: true,
+    });
+  }
+}
 
   return (
     <div className="flex h-screen bg-gray-50">

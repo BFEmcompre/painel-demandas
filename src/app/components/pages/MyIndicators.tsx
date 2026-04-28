@@ -116,20 +116,18 @@ export function MyIndicators() {
               <p className="text-sm text-gray-500">Responsável: {platform.responsible_name}</p>
             </div>
 
-            <label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => handleUpload(platform, e.target.files)}
-              />
+<label className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 cursor-pointer">
+  <Upload className="w-4 h-4" />
+  Enviar prints
 
-              <Button type="button" className="bg-blue-600 hover:bg-blue-700">
-                <Upload className="w-4 h-4 mr-2" />
-                Enviar prints
-              </Button>
-            </label>
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    className="hidden"
+    onChange={(e) => handleUpload(platform, e.target.files)}
+  />
+</label>
           </Card>
         ))
       )}
