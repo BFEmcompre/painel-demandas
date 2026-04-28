@@ -92,7 +92,7 @@ async function handleUploadWithSection(
   const uploads = [];
 
   for (const file of Array.from(files)) {
-    const fileName = `${Date.now()}-${file.name}`;
+    const fileName = `${platform.id}/${sectionId}/${Date.now()}-${file.name}`;
 
     const { error } = await supabase.storage
       .from('platform-indicators')
@@ -118,9 +118,17 @@ async function handleUploadWithSection(
     });
   }
 
-  await supabase.from('platform_indicator_images').insert(uploads);
+const { error: insertError } = await supabase
+  .from('platform_indicator_images')
+  .insert(uploads);
 
-  alert('Enviado!');
+if (insertError) {
+  alert(insertError.message || 'Erro ao salvar imagem');
+  return;
+}
+
+alert('Enviado!');
+loadData();
 }
 
 async function handleCreateSection(platformId: string) {
