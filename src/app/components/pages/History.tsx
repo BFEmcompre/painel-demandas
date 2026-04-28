@@ -39,6 +39,7 @@ export function History() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('all');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -57,9 +58,15 @@ async function loadData() {
     .eq('id', userId)
     .single();
 
-  let tasksQuery = supabase.from('tasks').select('*');
+const adminAccess = ['admin', 'manager', 'gestor'].includes(
+  String(profile?.role).toLowerCase()
+);
 
-  if (profile?.role !== 'admin') {
+setIsAdmin(adminAccess);
+
+let tasksQuery = supabase.from('tasks').select('*');
+
+if (!adminAccess) {
     const { data: relations } = await supabase
       .from('task_responsibles')
       .select('task_id')
@@ -96,8 +103,10 @@ const filteredTasks = tasks.filter((task) => {
 
   const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
 
-  const matchesResponsible =
-    responsibleFilter === 'all' || task.responsible_id === responsibleFilter;
+const matchesResponsible =
+  !isAdmin ||
+  responsibleFilter === 'all' ||
+  task.responsible_id === responsibleFilter;
 
   const today = new Date();
   const taskDate = new Date(`${task.date}T00:00:00`);
@@ -173,19 +182,21 @@ const filteredTasks = tasks.filter((task) => {
             </SelectContent>
           </Select>
 
-<Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-  <SelectTrigger className="w-full md:w-48">
-    <SelectValue placeholder="Responsável" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all">Todos</SelectItem>
-    {responsibles.map((resp) => (
-      <SelectItem key={resp.id} value={resp.id}>
-        {resp.name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+{isAdmin && (
+  <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+    <SelectTrigger className="w-full md:w-48">
+      <SelectValue placeholder="Responsável" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">Todos</SelectItem>
+      {responsibles.map((resp) => (
+        <SelectItem key={resp.id} value={resp.id}>
+          {resp.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+)}
 
 <Select value={periodFilter} onValueChange={setPeriodFilter}>
   <SelectTrigger className="w-full md:w-48">
