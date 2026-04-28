@@ -108,15 +108,16 @@ async function handleUploadWithSection(
       .from('platform-indicators')
       .getPublicUrl(fileName);
 
-    uploads.push({
-      platform_id: platform.id,
-      responsible_id: authData.user.id,
-      section_id: sectionId,
-      image_url: data.publicUrl,
-      reference_date: new Date().toLocaleDateString('sv-SE', {
-        timeZone: 'America/Sao_Paulo',
-      }),
-    });
+uploads.push({
+  platform_id: platform.id,
+  responsible_id: authData.user.id,
+  responsible_name: userName,
+  section_id: sectionId,
+  image_url: data.publicUrl,
+  reference_date: new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+  }),
+});
   }
 
 const { error: insertError } = await supabase
