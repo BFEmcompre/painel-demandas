@@ -71,13 +71,14 @@ const [isFullscreen, setIsFullscreen] = useState(false);
   .order('display_order');
 
 const result =
-  sections
-    ?.map((section) => {
-      const platform = platforms?.find((p) => p.id === section.platform_id);
+  platforms
+    ?.flatMap((platform) => {
+      const platformSections =
+        sections
+          ?.filter((section) => section.platform_id === platform.id)
+          .sort((a, b) => a.display_order - b.display_order) || [];
 
-      if (!platform) return null;
-
-      return {
+      return platformSections.map((section) => ({
         platform,
         section,
         yesterdayImages:
@@ -94,9 +95,8 @@ const result =
               img.section_id === section.id &&
               img.reference_date === today
           ) || [],
-      };
-    })
-    .filter(Boolean) || [];
+      }));
+    }) || [];
 
 setSlides(result as Slide[]);
   }
