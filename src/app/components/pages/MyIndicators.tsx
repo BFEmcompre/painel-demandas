@@ -284,11 +284,11 @@ platforms.map((platform) => (
   >
     Excluir
   </Button>
-</div>
-</div>
+        </div>
+      </div>
     ))}
   </Card>
-))
+))}
       )}
     </div>
   );
