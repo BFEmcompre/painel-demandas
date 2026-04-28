@@ -222,9 +222,8 @@ const matchesResponsible =
                 filteredTasks.map((task) => (
                   <TableRow key={task.id}>
 <TableCell>
-  task.date.split('-').reverse().join('/')
+  {task.date.split('-').reverse().join('/')}
 </TableCell>
-
                     <TableCell>
                       <p className="font-medium">{task.title}</p>
                       <p className="text-sm text-gray-500">{task.description}</p>
