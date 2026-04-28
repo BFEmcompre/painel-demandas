@@ -130,6 +130,23 @@ const matchesResponsible =
     );
   };
 
+  const handleViewPhotos = async (taskId: string) => {
+  const { data, error } = await supabase
+    .from('task_photos')
+    .select('photo_url')
+    .eq('task_id', taskId)
+    .order('created_at', { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    alert('Nenhuma foto encontrada para esta tarefa');
+    return;
+  }
+
+  data.forEach((photo) => {
+    window.open(photo.photo_url, '_blank');
+  });
+};
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -253,14 +270,13 @@ const matchesResponsible =
 
 <TableCell>
   {task.photo_url ? (
-    <a
-      href={task.photo_url}
-      target="_blank"
-      rel="noreferrer"
-      className="text-blue-600 text-sm"
+    <button
+      type="button"
+      onClick={() => handleViewPhotos(task.id)}
+      className="text-blue-600 text-sm hover:underline"
     >
-      Ver foto
-    </a>
+      Ver fotos
+    </button>
   ) : (
     '-'
   )}
