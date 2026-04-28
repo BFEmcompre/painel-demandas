@@ -22,6 +22,7 @@ export function MyIndicators() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [sections, setSections] = useState<Record<string, Section[]>>({});
 const [newSectionName, setNewSectionName] = useState('');
+const [newSectionOrder, setNewSectionOrder] = useState('');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
 
@@ -144,11 +145,12 @@ async function handleCreateSection(platformId: string) {
       platform_id: platformId,
       responsible_id: authData.user.id,
       name: newSectionName,
-      display_order: Date.now(),
+      display_order: Number(newSectionOrder || 0),
     });
 
   if (!error) {
     setNewSectionName('');
+    setNewSectionOrder('');
     loadData();
   }
 }
@@ -175,12 +177,20 @@ platforms.map((platform) => (
 
     {/* Criar categoria */}
     <div className="flex gap-2">
-      <input
-        value={newSectionName}
-        onChange={(e) => setNewSectionName(e.target.value)}
-        placeholder="Nova categoria"
-        className="border px-3 py-2 rounded w-full"
-      />
+<input
+  value={newSectionName}
+  onChange={(e) => setNewSectionName(e.target.value)}
+  placeholder="Nome da categoria"
+  className="border px-3 py-2 rounded w-full"
+/>
+
+<input
+  type="number"
+  value={newSectionOrder}
+  onChange={(e) => setNewSectionOrder(e.target.value)}
+  placeholder="Ordem"
+  className="border px-3 py-2 rounded w-24"
+/>
       <Button onClick={() => handleCreateSection(platform.id)}>
         Criar
       </Button>
