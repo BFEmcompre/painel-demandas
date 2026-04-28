@@ -111,7 +111,7 @@ const filteredPlatforms = platforms.filter((platform) => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold text-gray-900">Indicadores</h1>
-        <p className="text-gray-500 mt-1">Cadastre as plataformas e responsáveis</p>
+        <p className="text-gray-500 mt-1">Víncule plataformas a responsáveis</p>
       </div>
 
       <Card className="p-6">
