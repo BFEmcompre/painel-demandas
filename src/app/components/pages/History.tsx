@@ -177,18 +177,23 @@ export function History() {
                     <TableCell>{task.responsible_name}</TableCell>
 
                     <TableCell>
-new Date(task.deadline).toLocaleTimeString('pt-BR', {
-  hour: '2-digit',
-  minute: '2-digit',
-  timeZone: 'America/Sao_Paulo',
-})
-                    </TableCell>
+<TableCell>
+  {new Date(task.deadline).toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  })}
+</TableCell>
 
-                    <TableCell>
-                      {task.completed_at
-                        ? new Date(task.completed_at).toLocaleTimeString('pt-BR')
-                        : '-'}
-                    </TableCell>
+<TableCell>
+  {task.completed_at
+    ? new Date(task.completed_at).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      })
+    : '-'}
+</TableCell>
 
                     <TableCell>{getStatusBadge(task.status)}</TableCell>
 
