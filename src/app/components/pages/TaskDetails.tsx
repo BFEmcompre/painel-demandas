@@ -151,24 +151,22 @@ if (uploadError) {
       }
     }
 
-    const firstPhotoUrl =
-      savedPhotos[0]?.photo_url || uploadedPhotos[0]?.photo_url || task.photo_url;
+const firstPhotoUrl =
+  savedPhotos[0]?.photo_url || uploadedPhotos[0]?.photo_url || task.photo_url;
 
-    const { error } = await supabase
-      .from('tasks')
-      .update({
-        status: 'completed',
-        photo_url: firstPhotoUrl,
-        const now = new Date();
+const completedAt = new Date().toLocaleString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
 
-const completedAt = new Date(
-  now.getTime() - now.getTimezoneOffset() * 60000
-).toISOString();
-
-completed_at: completedAt,
-        observation,
-      })
-      .eq('id', task.id);
+const { error } = await supabase
+  .from('tasks')
+  .update({
+    status: 'completed',
+    photo_url: firstPhotoUrl,
+    completed_at: completedAt,
+    observation,
+  })
+  .eq('id', task.id);
 
     if (error) {
       toast.error('Erro ao concluir tarefa');
