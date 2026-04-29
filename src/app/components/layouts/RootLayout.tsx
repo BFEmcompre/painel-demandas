@@ -65,50 +65,40 @@ async function checkManagerRequests(userId: string, role?: string) {
 
   const { data: requests } = await supabase
     .from('manager_requests')
-    .select('*')
-    .eq('status', 'open');
+    .select('*');
 
   if (!requests || requests.length === 0) return;
 
-  // 🔵 NOVA DEMANDA (gestor)
   if (role === 'manager') {
-    const newRequests = requests.filter((r) => {
+    const openRequests = requests.filter((r) => r.status === 'open');
+
+    const newRequests = openRequests.filter((r) => {
       const created = new Date(r.created_at);
-      return now.getTime() - created.getTime() < 60000; // últimos 1 min
+      return now.getTime() - created.getTime() < 60000;
     });
 
-    if (newRequests.length > 0) {
+    if (newRequests.length > 0 && Notification.permission === 'granted') {
       new Notification('📩 Nova demanda recebida', {
         body: `${newRequests.length} nova(s) demanda(s)`,
         requireInteraction: true,
       });
     }
-  }
 
-  // 🔴 VENCIDAS (gestor)
-  if (role === 'manager') {
-    const overdue = requests.filter(
-      (r) => new Date(r.due_at) < now
-    );
+    const overdue = openRequests.filter((r) => new Date(r.due_at) < now);
 
-    if (overdue.length > 0) {
+    if (overdue.length > 0 && Notification.permission === 'granted') {
       new Notification('⏰ Demandas vencidas', {
         body: `${overdue.length} demanda(s) vencida(s)`,
         requireInteraction: true,
       });
     }
-  }
 
-  // 🟡 PRÓXIMAS DE VENCER (10 min)
-  if (role === 'manager') {
-    const upcoming = requests.filter((r) => {
-      const diff =
-        new Date(r.due_at).getTime() - now.getTime();
-
+    const upcoming = openRequests.filter((r) => {
+      const diff = new Date(r.due_at).getTime() - now.getTime();
       return diff > 0 && diff <= 10 * 60 * 1000;
     });
 
-    if (upcoming.length > 0) {
+    if (upcoming.length > 0 && Notification.permission === 'granted') {
       new Notification('⚠️ Próximo do prazo', {
         body: `${upcoming.length} demanda(s) vencendo em breve`,
         requireInteraction: true,
@@ -116,7 +106,6 @@ async function checkManagerRequests(userId: string, role?: string) {
     }
   }
 
-  // 🟢 RESPOSTA (responsável)
   if (role !== 'manager') {
     const answered = requests.filter(
       (r) =>
@@ -125,7 +114,7 @@ async function checkManagerRequests(userId: string, role?: string) {
         r.responded_at
     );
 
-    if (answered.length > 0) {
+    if (answered.length > 0 && Notification.permission === 'granted') {
       new Notification('✅ Demanda respondida', {
         body: 'Você recebeu uma resposta do gestor',
         requireInteraction: true,
@@ -133,7 +122,6 @@ async function checkManagerRequests(userId: string, role?: string) {
     }
   }
 }
-
 
 
     const { data: allPendingTasks } = await supabase

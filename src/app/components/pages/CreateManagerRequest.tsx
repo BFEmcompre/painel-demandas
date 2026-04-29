@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase';
 
 export function CreateManagerRequest() {
   const navigate = useNavigate();
-
+  const [urgent, setUrgent] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [dueAt, setDueAt] = useState('');
@@ -44,6 +44,7 @@ export function CreateManagerRequest() {
         requester_name: profile.name,
         due_at: dueAt,
         status: 'open',
+        urgent,
       })
       .select()
       .single();
@@ -90,7 +91,7 @@ export function CreateManagerRequest() {
     }
 
     alert('Demanda enviada ao gestor!');
-    navigate('/minhas-demandas');
+    navigate('/minhas-demandas-gestor');
   }
 
   return (
@@ -129,6 +130,17 @@ export function CreateManagerRequest() {
               onChange={(e) => setFiles(e.target.files)}
             />
           </div>
+
+	<label className="flex items-center gap-2">
+  <input
+    type="checkbox"
+    checked={urgent}
+    onChange={(e) => setUrgent(e.target.checked)}
+  />
+  <span className="text-sm font-medium text-red-600">
+    Marcar como urgente
+  </span>
+</label>	
 
           <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
             Enviar demanda

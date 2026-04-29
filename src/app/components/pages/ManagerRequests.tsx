@@ -12,6 +12,7 @@ type ManagerRequest = {
   due_at: string;
   status: string;
   created_at: string;
+urgent: boolean;
 };
 
 export function ManagerRequests() {
@@ -41,8 +42,17 @@ export function ManagerRequests() {
     if (filter === 'open') return request.status === 'open' && !isOverdue(request);
     if (filter === 'overdue') return isOverdue(request);
     if (filter === 'answered') return request.status === 'answered';
-    return true;
+if (filter === 'urgent') return request.urgent === true;
+return true;
   });
+
+const orderedRequests = [...filteredRequests].sort((a, b) => {
+  if (a.urgent && !b.urgent) return -1;
+  if (!a.urgent && b.urgent) return 1;
+
+  return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
+});
+
 
   return (
     <div className="space-y-6">
@@ -68,6 +78,14 @@ export function ManagerRequests() {
           Vencidas
         </Button>
 
+<Button
+  type="button"
+  variant={filter === 'urgent' ? 'default' : 'outline'}
+  onClick={() => setFilter('urgent')}
+>
+  Urgentes
+</Button>
+
         <Button
           type="button"
           variant={filter === 'answered' ? 'default' : 'outline'}
@@ -85,20 +103,25 @@ export function ManagerRequests() {
         </Button>
       </div>
 
-      {filteredRequests.length === 0 ? (
+      {orderedRequests.length === 0 ? (
         <Card className="p-10 text-center text-gray-500">
           Nenhuma demanda encontrada.
         </Card>
       ) : (
-        filteredRequests.map((request) => (
-          <Card
-            key={request.id}
-            className="p-5 cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate(`/demandas-gestor/${request.id}`)}
-          >
+        orderedRequests.map((request) => (
+<Card
+  key={request.id}
+  className="p-5 cursor-pointer hover:bg-gray-50"
+  onClick={() => navigate(`/demandas-gestor/${request.id}`)}
+>
             <div className="flex justify-between gap-4">
               <div>
                 <h2 className="font-semibold text-lg">{request.subject}</h2>
+                 {request.urgent && (
+  <p className="text-red-600 text-sm font-semibold mt-1">
+    ⚠ Urgente
+  </p>
+)}
                 <p className="text-sm text-gray-500">
                   Enviado por: {request.requester_name}
                 </p>
