@@ -27,6 +27,7 @@ const managerMenuItems = [
 const responsibleMenuItems = [
   { icon: CheckSquare, label: 'Minhas Demandas', path: '/minhas-demandas' },
   { icon: PlusSquare, label: 'Enviar Demanda', path: '/nova-demanda-gestor' },
+  { icon: CheckSquare, label: 'Retornos do Gestor', path: '/minhas-demandas-gestor' },
   { icon: BarChart3, label: 'Meus Indicadores', path: '/meus-indicadores' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },

@@ -15,6 +15,7 @@ import { IndicatorsPresentation } from "./components/pages/IndicatorsPresentatio
 import { CreateManagerRequest } from "./components/pages/CreateManagerRequest";
 import { ManagerRequests } from "./components/pages/ManagerRequests";
 import { ManagerRequestDetails } from "./components/pages/ManagerRequestDetails";
+import { MyManagerRequests } from "./components/pages/MyManagerRequests";
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
       { path: "indicadores", Component: Platforms },
       { path: "meus-indicadores", Component: MyIndicators },
       { path: "indicadores/apresentacao", Component: IndicatorsPresentation },
+      { path: "minhas-demandas-gestor", Component: MyManagerRequests },
     ],
   },
 ]);
