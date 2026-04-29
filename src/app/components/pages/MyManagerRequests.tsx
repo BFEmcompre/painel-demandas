@@ -43,6 +43,35 @@ export function MyManagerRequests() {
     return true;
   });
 
+
+async function markResponseAsViewed(requestId: string) {
+  const { data: authData } = await supabase.auth.getUser();
+
+  if (!authData.user) return;
+
+  const { error } = await supabase
+    .from('manager_request_alert_views')
+    .upsert(
+      {
+        request_id: requestId,
+        user_id: authData.user.id,
+        alert_type: 'response_viewed',
+      },
+      {
+        onConflict: 'request_id,user_id,alert_type',
+      }
+    );
+
+  if (error) {
+    alert(error.message || 'Erro ao marcar como visto');
+    return;
+  }
+
+  loadRequests();
+}
+
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -128,6 +157,16 @@ export function MyManagerRequests() {
                     ? new Date(request.responded_at).toLocaleString('pt-BR')
                     : ''}
                 </p>
+			
+		<Button
+  type="button"
+  variant="outline"
+  className="mt-3"
+  onClick={() => markResponseAsViewed(request.id)}
+>
+  Marcar resposta como vista
+</Button>
+	  	
               </div>
             )}
           </Card>

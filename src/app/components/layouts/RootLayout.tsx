@@ -107,19 +107,33 @@ async function checkManagerRequests(userId: string, role?: string) {
   }
 
   if (role !== 'manager') {
-    const answered = requests.filter(
-      (r) =>
-        r.requester_id === userId &&
-        r.status === 'answered' &&
-        r.responded_at
-    );
+const answered = requests.filter(
+  (r) =>
+    r.requester_id === userId &&
+    r.status === 'answered' &&
+    r.responded_at
+);
 
-    if (answered.length > 0 && Notification.permission === 'granted') {
-      new Notification('✅ Demanda respondida', {
-        body: 'Você recebeu uma resposta do gestor',
-        requireInteraction: true,
-      });
-    }
+if (answered.length === 0) return;
+
+const { data: viewedResponses } = await supabase
+  .from('manager_request_alert_views')
+  .select('request_id')
+  .eq('user_id', userId)
+  .eq('alert_type', 'response_viewed');
+
+const viewedIds = viewedResponses?.map((item) => item.request_id) || [];
+
+const notViewedAnswered = answered.filter(
+  (request) => !viewedIds.includes(request.id)
+);
+
+if (notViewedAnswered.length > 0 && Notification.permission === 'granted') {
+  new Notification('✅ Demanda respondida', {
+    body: `${notViewedAnswered.length} demanda(s) respondida(s) pelo gestor`,
+    requireInteraction: true,
+  });
+}
   }
 }
 
