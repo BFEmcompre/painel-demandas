@@ -12,6 +12,9 @@ import { RegisterPage } from "./components/pages/RegisterPage";
 import { Platforms } from "./components/pages/Platforms";
 import { MyIndicators } from "./components/pages/MyIndicators";
 import { IndicatorsPresentation } from "./components/pages/IndicatorsPresentation";
+import { CreateManagerRequest } from "./components/pages/CreateManagerRequest";
+import { ManagerRequests } from "./components/pages/ManagerRequests";
+import { ManagerRequestDetails } from "./components/pages/ManagerRequestDetails";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +31,9 @@ export const router = createBrowserRouter([
     path: "/",
     Component: RootLayout,
     children: [
+      { path: "nova-demanda-gestor", Component: CreateManagerRequest },
+      { path: "demandas-gestor", Component: ManagerRequests },
+      { path: "demandas-gestor/:id", Component: ManagerRequestDetails },  
       { index: true, Component: ManagerDashboard },
       { path: "minhas-demandas", Component: ResponsibleDashboard },
       { path: "criar-demanda", Component: CreateDemand },

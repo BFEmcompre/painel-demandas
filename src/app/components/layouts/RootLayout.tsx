@@ -5,6 +5,7 @@ import { Header } from '../header/Header';
 import { AlertNotification } from '../notifications/AlertNotification';
 import { supabase } from '../../lib/supabase';
 
+
 type AlertTask = {
   id: string;
   title: string;
@@ -57,6 +58,83 @@ export function RootLayout() {
       .single();
 
 await checkPendingIndicators(userId, profile?.role);
+await checkManagerRequests(userId, profile?.role);
+
+async function checkManagerRequests(userId: string, role?: string) {
+  const now = new Date();
+
+  const { data: requests } = await supabase
+    .from('manager_requests')
+    .select('*')
+    .eq('status', 'open');
+
+  if (!requests || requests.length === 0) return;
+
+  // 🔵 NOVA DEMANDA (gestor)
+  if (role === 'manager') {
+    const newRequests = requests.filter((r) => {
+      const created = new Date(r.created_at);
+      return now.getTime() - created.getTime() < 60000; // últimos 1 min
+    });
+
+    if (newRequests.length > 0) {
+      new Notification('📩 Nova demanda recebida', {
+        body: `${newRequests.length} nova(s) demanda(s)`,
+        requireInteraction: true,
+      });
+    }
+  }
+
+  // 🔴 VENCIDAS (gestor)
+  if (role === 'manager') {
+    const overdue = requests.filter(
+      (r) => new Date(r.due_at) < now
+    );
+
+    if (overdue.length > 0) {
+      new Notification('⏰ Demandas vencidas', {
+        body: `${overdue.length} demanda(s) vencida(s)`,
+        requireInteraction: true,
+      });
+    }
+  }
+
+  // 🟡 PRÓXIMAS DE VENCER (10 min)
+  if (role === 'manager') {
+    const upcoming = requests.filter((r) => {
+      const diff =
+        new Date(r.due_at).getTime() - now.getTime();
+
+      return diff > 0 && diff <= 10 * 60 * 1000;
+    });
+
+    if (upcoming.length > 0) {
+      new Notification('⚠️ Próximo do prazo', {
+        body: `${upcoming.length} demanda(s) vencendo em breve`,
+        requireInteraction: true,
+      });
+    }
+  }
+
+  // 🟢 RESPOSTA (responsável)
+  if (role !== 'manager') {
+    const answered = requests.filter(
+      (r) =>
+        r.requester_id === userId &&
+        r.status === 'answered' &&
+        r.responded_at
+    );
+
+    if (answered.length > 0) {
+      new Notification('✅ Demanda respondida', {
+        body: 'Você recebeu uma resposta do gestor',
+        requireInteraction: true,
+      });
+    }
+  }
+}
+
+
 
     const { data: allPendingTasks } = await supabase
       .from('tasks')

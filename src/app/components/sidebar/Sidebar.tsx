@@ -16,6 +16,7 @@ import { supabase } from '../../lib/supabase';
 const managerMenuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: PlusSquare, label: 'Criar Demanda', path: '/criar-demanda' },
+  { icon: CheckSquare, label: 'Demandas Recebidas', path: '/demandas-gestor' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Users, label: 'Responsáveis', path: '/responsaveis' },
   { icon: BarChart3, label: 'Indicadores', path: '/indicadores' },
@@ -25,6 +26,7 @@ const managerMenuItems = [
 
 const responsibleMenuItems = [
   { icon: CheckSquare, label: 'Minhas Demandas', path: '/minhas-demandas' },
+  { icon: PlusSquare, label: 'Enviar Demanda', path: '/nova-demanda-gestor' },
   { icon: BarChart3, label: 'Meus Indicadores', path: '/meus-indicadores' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
