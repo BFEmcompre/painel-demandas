@@ -97,13 +97,31 @@ export function TaskDetails() {
   };
 
   const toggleChecklist = async (itemId: string, current: boolean) => {
-    await supabase
-      .from('checklist_items')
-      .update({ completed: !current })
-      .eq('id', itemId);
+  const { data: authData } = await supabase.auth.getUser();
 
-    loadTask();
-  };
+  if (!authData?.user || !task) return;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name')
+    .eq('id', authData.user.id)
+    .single();
+
+  await supabase
+    .from('checklist_items')
+    .update({ completed: !current })
+    .eq('id', itemId);
+
+  await supabase.from('checklist_item_logs').insert({
+    checklist_item_id: itemId,
+    task_id: task.id,
+    user_id: authData.user.id,
+    user_name: profile?.name || 'Usuário',
+    action: !current ? 'marcou' : 'desmarcou',
+  });
+
+  loadTask();
+};
 
 const handleCompleteTask = async () => {
   const hasAnyPhoto = savedPhotos.length > 0 || newPhotos.length > 0;

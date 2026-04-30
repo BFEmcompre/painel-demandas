@@ -31,6 +31,7 @@ const responsibleMenuItems = [
   { icon: BarChart3, label: 'Meus Indicadores', path: '/meus-indicadores' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
+  { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
 ];
 
 type Profile = {

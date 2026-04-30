@@ -20,16 +20,16 @@ export function RootLayout() {
   const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
   const [currentUserId, setCurrentUserId] = useState('');
 
-  useEffect(() => {
-    requestNotificationPermission();
+useEffect(() => {
+  requestNotificationPermission();
+  checkUserAndOverdueTasks();
+
+  const interval = setInterval(() => {
     checkUserAndOverdueTasks();
+}, 300000);
 
-    const interval = setInterval(() => {
-      checkUserAndOverdueTasks();
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  return () => clearInterval(interval);
+}, []);
 
   async function requestNotificationPermission() {
     if (!('Notification' in window)) return;
@@ -230,6 +230,8 @@ console.log('Mensagem:', message);
   }
 
   if (loading) {
+
+
     return (
       <div className="flex items-center justify-center h-screen">
         Carregando...
