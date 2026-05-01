@@ -52,6 +52,11 @@ export function TaskDetails() {
 const [isAdmin, setIsAdmin] = useState(false);
 const [logs, setLogs] = useState<any[]>([]);
 
+const [updatingChecklistId, setUpdatingChecklistId] = useState<string | null>(null);
+const [clickedChecklistId, setClickedChecklistId] = useState<string | null>(null);
+const [hoveredLogItemId, setHoveredLogItemId] = useState<string | null>(null);
+const [pinnedLogItemId, setPinnedLogItemId] = useState<string | null>(null);
+
   useEffect(() => {
     loadTask();
   }, []);
@@ -126,9 +131,37 @@ setLogs(logsData || []);
   };
 
   const toggleChecklist = async (itemId: string, current: boolean) => {
+  if (!task || updatingChecklistId === itemId) return;
+
+  const nextValue = !current;
+
+  setUpdatingChecklistId(itemId);
+  setClickedChecklistId(itemId);
+
+  // Atualiza visualmente na hora
+  setChecklist((currentItems) =>
+    currentItems.map((item) =>
+      item.id === itemId ? { ...item, completed: nextValue } : item
+    )
+  );
+
+  setTimeout(() => {
+    setClickedChecklistId((currentId) =>
+      currentId === itemId ? null : currentId
+    );
+  }, 500);
+
   const { data: authData } = await supabase.auth.getUser();
 
-  if (!authData?.user || !task) return;
+  if (!authData?.user) {
+    setChecklist((currentItems) =>
+      currentItems.map((item) =>
+        item.id === itemId ? { ...item, completed: current } : item
+      )
+    );
+    setUpdatingChecklistId(null);
+    return;
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -136,20 +169,38 @@ setLogs(logsData || []);
     .eq('id', authData.user.id)
     .single();
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('checklist_items')
-    .update({ completed: !current })
+    .update({ completed: nextValue })
     .eq('id', itemId);
 
-  await supabase.from('checklist_item_logs').insert({
+  if (updateError) {
+    setChecklist((currentItems) =>
+      currentItems.map((item) =>
+        item.id === itemId ? { ...item, completed: current } : item
+      )
+    );
+
+    toast.error(updateError.message || 'Erro ao atualizar checklist');
+    setUpdatingChecklistId(null);
+    return;
+  }
+
+  const { error: logError } = await supabase.from('checklist_item_logs').insert({
     checklist_item_id: itemId,
     task_id: task.id,
     user_id: authData.user.id,
     user_name: profile?.name || 'Usuário',
-    action: !current ? 'marcou' : 'desmarcou',
+    action: nextValue ? 'marcou' : 'desmarcou',
   });
 
-  loadTask();
+  if (logError) {
+    console.error(logError);
+  }
+
+  await loadTask();
+
+  setUpdatingChecklistId(null);
 };
 
 const handleCompleteTask = async () => {
@@ -265,31 +316,97 @@ const { error } = await supabase
         <h2 className="font-semibold mb-3">Checklist</h2>
 
 {checklist.map((item) => {
-  const itemLogs = logs.filter((log) => log.checklist_item_id === item.id);
+  const itemLogs = logs.filter(
+    (log) => log.checklist_item_id === item.id
+  );
+
+  const isUpdating = updatingChecklistId === item.id;
+  const wasClicked = clickedChecklistId === item.id;
+  const showLog =
+    isAdmin &&
+    itemLogs.length > 0 &&
+    (hoveredLogItemId === item.id || pinnedLogItemId === item.id);
 
   return (
-    <div key={item.id} className="relative group flex items-center gap-2 mb-2">
-            <Checkbox
-              checked={item.completed}
-              onCheckedChange={() => toggleChecklist(item.id, item.completed)}
-              disabled={task.status === 'completed'}
-            />
-            <span className={item.completed ? 'line-through text-gray-500' : ''}>
-              {item.text}
-            </span>
- 	    {isAdmin && itemLogs.length > 0 && (
-  <div className="absolute left-0 top-8 max-h-40 overflow-y-auto hidden group-hover:block bg-white border shadow-lg rounded p-3 z-50 w-64 text-xs">
-    {itemLogs.map((log) => (
-      <p key={log.id} className="mb-1">
-        <strong>{log.user_name}</strong> {log.action} <br />
-        {new Date(log.created_at).toLocaleString('pt-BR')}
-      </p>
-    ))}
-  </div>
-)}
+    <div
+      key={item.id}
+      className="relative mb-2"
+      onMouseEnter={() => setHoveredLogItemId(item.id)}
+      onMouseLeave={() => setHoveredLogItemId(null)}
+    >
+      <div
+        className={`flex items-center gap-2 rounded-lg p-2 transition-all ${
+          wasClicked ? 'bg-blue-50 ring-1 ring-blue-200' : ''
+        } ${isUpdating ? 'opacity-80' : ''}`}
+      >
+        <div
+          className={`transition-transform ${
+            wasClicked ? 'scale-110' : 'scale-100'
+          }`}
+        >
+          <Checkbox
+            checked={item.completed}
+            onCheckedChange={() => toggleChecklist(item.id, item.completed)}
+            disabled={task.status === 'completed' || isUpdating}
+          />
+        </div>
+
+        <span className={item.completed ? 'line-through text-gray-500' : ''}>
+          {item.text}
+        </span>
+
+        {isUpdating && (
+          <span className="text-xs text-blue-600 ml-2">
+            Salvando...
+          </span>
+        )}
+
+        {isAdmin && itemLogs.length > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPinnedLogItemId((current) =>
+                current === item.id ? null : item.id
+              );
+            }}
+            className="ml-auto text-xs text-blue-600 hover:underline"
+          >
+            {pinnedLogItemId === item.id ? 'Desfixar log' : 'Fixar log'}
+          </button>
+        )}
+      </div>
+
+      {showLog && (
+        <div className="ml-8 mt-1 mb-3 max-h-44 overflow-y-auto bg-white border shadow-lg rounded-lg p-3 z-50 text-xs">
+          <div className="flex items-center justify-between mb-2">
+            <strong>Histórico do checklist</strong>
+
+            {pinnedLogItemId === item.id && (
+              <button
+                type="button"
+                onClick={() => setPinnedLogItemId(null)}
+                className="text-gray-500 hover:text-gray-800"
+              >
+                Fechar
+              </button>
+            )}
           </div>
-        );
-      })}
+
+          {itemLogs.map((log) => (
+            <p key={log.id} className="mb-2 border-b last:border-b-0 pb-2">
+              <strong>{log.user_name}</strong> {log.action}
+              <br />
+              <span className="text-gray-500">
+                {new Date(log.created_at).toLocaleString('pt-BR')}
+              </span>
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+})}
 
         <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-sm text-blue-800">
           <Clock className="w-4 h-4" />
