@@ -186,13 +186,14 @@ setLogs(logsData || []);
     return;
   }
 
-  const { error: logError } = await supabase.from('checklist_item_logs').insert({
-    checklist_item_id: itemId,
-    task_id: task.id,
-    user_id: authData.user.id,
-    user_name: profile?.name || 'Usuário',
-    action: nextValue ? 'marcou' : 'desmarcou',
-  });
+await supabase.from('checklist_item_logs').insert({
+  checklist_item_id: itemId,
+  task_id: task.id,
+  user_id: authData.user.id,
+  user_name: profile?.name || 'Usuário',
+  action: nextValue ? 'marcou' : 'desmarcou',
+  created_at: new Date().toISOString(),
+});
 
   if (logError) {
     console.error(logError);
@@ -398,7 +399,14 @@ const { error } = await supabase
               <strong>{log.user_name}</strong> {log.action}
               <br />
               <span className="text-gray-500">
-                {new Date(log.created_at).toLocaleString('pt-BR')}
+                {new Date(log.created_at).toLocaleString('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})}
               </span>
             </p>
           ))}
