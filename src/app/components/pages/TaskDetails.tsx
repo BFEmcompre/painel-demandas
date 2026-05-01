@@ -9,6 +9,7 @@ import { ArrowLeft, Upload, CheckCircle, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 
+
 type Task = {
   id: string;
   title: string;
@@ -48,11 +49,39 @@ export function TaskDetails() {
   const [newPhotos, setNewPhotos] = useState<NewPhoto[]>([]);
   const [observation, setObservation] = useState('');
 
+const [isAdmin, setIsAdmin] = useState(false);
+const [logs, setLogs] = useState<any[]>([]);
+
   useEffect(() => {
     loadTask();
   }, []);
 
   async function loadTask() {
+
+const { data: authData } = await supabase.auth.getUser();
+
+if (authData?.user) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .single();
+
+  const admin = ['admin', 'manager', 'gestor'].includes(
+    String(profile?.role).toLowerCase()
+  );
+
+  setIsAdmin(admin);
+}
+
+const { data: logsData } = await supabase
+  .from('checklist_item_logs')
+  .select('*')
+  .eq('task_id', id)
+  .order('created_at', { ascending: false });
+
+setLogs(logsData || []);
+
     const { data: taskData } = await supabase
       .from('tasks')
       .select('*')
@@ -235,8 +264,11 @@ const { error } = await supabase
       <Card className="p-6 mb-6">
         <h2 className="font-semibold mb-3">Checklist</h2>
 
-        {checklist.map((item) => (
-          <div key={item.id} className="flex items-center gap-2 mb-2">
+{checklist.map((item) => {
+  const itemLogs = logs.filter((log) => log.checklist_item_id === item.id);
+
+  return (
+    <div key={item.id} className="relative group flex items-center gap-2 mb-2">
             <Checkbox
               checked={item.completed}
               onCheckedChange={() => toggleChecklist(item.id, item.completed)}
@@ -245,6 +277,16 @@ const { error } = await supabase
             <span className={item.completed ? 'line-through text-gray-500' : ''}>
               {item.text}
             </span>
+ 	    {isAdmin && itemLogs.length > 0 && (
+  <div className="absolute left-0 top-8 max-h-40 overflow-y-auto hidden group-hover:block bg-white border shadow-lg rounded p-3 z-50 w-64 text-xs">
+    {itemLogs.map((log) => (
+      <p key={log.id} className="mb-1">
+        <strong>{log.user_name}</strong> {log.action} <br />
+        {new Date(log.created_at).toLocaleString('pt-BR')}
+      </p>
+    ))}
+  </div>
+)}
           </div>
         ))}
 
