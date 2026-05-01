@@ -288,8 +288,8 @@ const { error } = await supabase
   </div>
 )}
           </div>
-	);
-        ))}
+        );
+      })}
 
         <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-sm text-blue-800">
           <Clock className="w-4 h-4" />
