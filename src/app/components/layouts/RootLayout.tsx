@@ -5,7 +5,6 @@ import { Header } from '../header/Header';
 import { AlertNotification } from '../notifications/AlertNotification';
 import { supabase } from '../../lib/supabase';
 
-
 type AlertTask = {
   id: string;
   title: string;
@@ -20,30 +19,46 @@ export function RootLayout() {
   const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
   const [currentUserId, setCurrentUserId] = useState('');
 
-useEffect(() => {
-  let managerRequestsChannel: any = null;
+  useEffect(() => {
+    let managerRequestsChannel: any = null;
 
-  requestNotificationPermission();
-  checkUserAndOverdueTasks();
+    requestNotificationPermission();
+    checkUserAndOverdueTasks();
 
-  async function setupRealtime() {
-    managerRequestsChannel = await subscribeManagerRequests();
+    async function setupRealtime() {
+      managerRequestsChannel = await subscribeManagerRequests();
+    }
+
+    setupRealtime();
+
+    const interval = setInterval(() => {
+      checkUserAndOverdueTasks();
+    }, 300000);
+
+    return () => {
+      clearInterval(interval);
+
+      if (managerRequestsChannel) {
+        supabase.removeChannel(managerRequestsChannel);
+      }
+    };
+  }, []);
+
+  function isManagerRole(role?: string) {
+    return ['manager', 'admin', 'gestor'].includes(
+      String(role).toLowerCase()
+    );
   }
 
-  setupRealtime();
+  function sendBrowserNotification(title: string, body: string) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
 
-  const interval = setInterval(() => {
-    checkUserAndOverdueTasks();
-  }, 300000);
-
-  return () => {
-    clearInterval(interval);
-
-    if (managerRequestsChannel) {
-      supabase.removeChannel(managerRequestsChannel);
-    }
-  };
-}, []);
+    new Notification(title, {
+      body,
+      requireInteraction: true,
+    });
+  }
 
   async function requestNotificationPermission() {
     if (!('Notification' in window)) return;
@@ -71,71 +86,8 @@ useEffect(() => {
       .eq('id', userId)
       .single();
 
-await checkPendingIndicators(userId, profile?.role);
-await checkManagerRequests(userId, profile?.role);
-
-async function checkManagerRequests(userId: string, role?: string) {
-  const now = new Date();
-
-  const { data: requests } = await supabase
-    .from('manager_requests')
-    .select('*');
-
-  if (!requests || requests.length === 0) return;
-
-    const overdue = openRequests.filter((r) => new Date(r.due_at) < now);
-
-    if (overdue.length > 0 && Notification.permission === 'granted') {
-      new Notification('⏰ Demandas vencidas', {
-        body: `${overdue.length} demanda(s) vencida(s)`,
-        requireInteraction: true,
-      });
-    }
-
-    const upcoming = openRequests.filter((r) => {
-      const diff = new Date(r.due_at).getTime() - now.getTime();
-      return diff > 0 && diff <= 10 * 60 * 1000;
-    });
-
-    if (upcoming.length > 0 && Notification.permission === 'granted') {
-      new Notification('⚠️ Próximo do prazo', {
-        body: `${upcoming.length} demanda(s) vencendo em breve`,
-        requireInteraction: true,
-      });
-    }
-  }
-
-  if (role !== 'manager') {
-const answered = requests.filter(
-  (r) =>
-    r.requester_id === userId &&
-    r.status === 'answered' &&
-    r.responded_at
-);
-
-if (answered.length === 0) return;
-
-const { data: viewedResponses } = await supabase
-  .from('manager_request_alert_views')
-  .select('request_id')
-  .eq('user_id', userId)
-  .eq('alert_type', 'response_viewed');
-
-const viewedIds = viewedResponses?.map((item) => item.request_id) || [];
-
-const notViewedAnswered = answered.filter(
-  (request) => !viewedIds.includes(request.id)
-);
-
-if (notViewedAnswered.length > 0 && Notification.permission === 'granted') {
-  new Notification('✅ Demanda respondida', {
-    body: `${notViewedAnswered.length} demanda(s) respondida(s) pelo gestor`,
-    requireInteraction: true,
-  });
-}
-  }
-}
-
+    await checkPendingIndicators(userId, profile?.role);
+    await checkManagerRequests(userId, profile?.role);
 
     const { data: allPendingTasks } = await supabase
       .from('tasks')
@@ -160,7 +112,7 @@ if (notViewedAnswered.length > 0 && Notification.permission === 'granted') {
 
     let tasksToNotify = overdueTasks;
 
-    if (profile?.role !== 'manager') {
+    if (!isManagerRole(profile?.role)) {
       const { data: relations } = await supabase
         .from('task_responsibles')
         .select('task_id')
@@ -201,16 +153,163 @@ if (notViewedAnswered.length > 0 && Notification.permission === 'granted') {
     setAlertMessage(message);
     setShowAlert(true);
 
-    if ('Notification' in window && Notification.permission === 'granted') {
-       console.log('Permissão:', Notification.permission);
-console.log('Tarefas não vistas:', notViewedTasks);
-console.log('Mensagem:', message);
-      new Notification('🚨 Tarefa atrasada', {
-        body: message,
-        tag: `tarefa-atrasada-${Date.now()}`,
-        requireInteraction: true,
+    sendBrowserNotification('🚨 Tarefa atrasada', message);
+  }
+
+  async function checkManagerRequests(userId: string, role?: string) {
+    const now = new Date();
+
+    const { data: requests } = await supabase
+      .from('manager_requests')
+      .select('*');
+
+    if (!requests || requests.length === 0) return;
+
+    if (isManagerRole(role)) {
+      const openRequests = requests.filter((request) =>
+        ['open', 'unresolved'].includes(request.status)
+      );
+
+      const overdue = openRequests.filter(
+        (request) => new Date(request.due_at) < now
+      );
+
+      if (overdue.length > 0) {
+        sendBrowserNotification(
+          '⏰ Demandas vencidas',
+          `${overdue.length} demanda(s) vencida(s)`
+        );
+      }
+
+      const upcoming = openRequests.filter((request) => {
+        const diff = new Date(request.due_at).getTime() - now.getTime();
+
+        return diff > 0 && diff <= 10 * 60 * 1000;
       });
+
+      if (upcoming.length > 0) {
+        sendBrowserNotification(
+          '⚠️ Próximo do prazo',
+          `${upcoming.length} demanda(s) vencendo em breve`
+        );
+      }
+
+      return;
     }
+
+    const answered = requests.filter(
+      (request) =>
+        request.requester_id === userId &&
+        request.status === 'answered' &&
+        request.responded_at
+    );
+
+    if (answered.length === 0) return;
+
+    const { data: viewedResponses } = await supabase
+      .from('manager_request_alert_views')
+      .select('request_id')
+      .eq('user_id', userId)
+      .eq('alert_type', 'response_viewed');
+
+    const viewedIds = viewedResponses?.map((item) => item.request_id) || [];
+
+    const notViewedAnswered = answered.filter(
+      (request) => !viewedIds.includes(request.id)
+    );
+
+    if (notViewedAnswered.length > 0) {
+      sendBrowserNotification(
+        '✅ Demanda respondida',
+        `${notViewedAnswered.length} demanda(s) respondida(s) pelo gestor`
+      );
+    }
+  }
+
+  async function subscribeManagerRequests() {
+    const { data: authData } = await supabase.auth.getUser();
+
+    if (!authData.user) return null;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (!isManagerRole(profile?.role)) return null;
+
+    const channel = supabase
+      .channel('manager-requests-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'manager_requests',
+        },
+        (payload) => {
+          const request: any = payload.new;
+
+          sendBrowserNotification(
+            '📩 Nova demanda recebida',
+            request.urgent ? `URGENTE: ${request.subject}` : request.subject
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'manager_requests',
+        },
+        (payload) => {
+          const request: any = payload.new;
+
+          if (request.status !== 'unresolved') return;
+
+          sendBrowserNotification(
+            '🔁 Demanda marcada como não resolvida',
+            request.urgent ? `URGENTE: ${request.subject}` : request.subject
+          );
+        }
+      )
+      .subscribe();
+
+    return channel;
+  }
+
+  async function checkPendingIndicators(userId: string, role?: string) {
+    if (!isManagerRole(role)) return;
+
+    const today = new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'America/Sao_Paulo',
+    });
+
+    const { data: platforms } = await supabase
+      .from('platforms')
+      .select('*');
+
+    const { data: images } = await supabase
+      .from('platform_indicator_images')
+      .select('*')
+      .eq('reference_date', today);
+
+    const pending = platforms?.filter((platform) => {
+      return !images?.some(
+        (image) =>
+          image.platform_id === platform.id &&
+          image.responsible_id === platform.responsible_id
+      );
+    });
+
+    if (!pending || pending.length === 0) return;
+
+    sendBrowserNotification(
+      '📊 Indicadores pendentes',
+      `${pending.length} indicadores não enviados`
+    );
   }
 
   async function markAlertAsViewed() {
@@ -228,119 +327,13 @@ console.log('Mensagem:', message);
     setShowAlert(false);
   }
 
-async function subscribeManagerRequests() {
-  const { data: authData } = await supabase.auth.getUser();
-
-  if (!authData.user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', authData.user.id)
-    .single();
-
-  const isManager = ['manager', 'admin', 'gestor'].includes(
-    String(profile?.role).toLowerCase()
-  );
-
-  if (!isManager) return null;
-
-  const channel = supabase
-    .channel('manager-requests-realtime')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'manager_requests',
-      },
-      (payload) => {
-        const request: any = payload.new;
-
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('📩 Nova demanda recebida', {
-            body: request.urgent
-              ? `URGENTE: ${request.subject}`
-              : request.subject,
-            requireInteraction: true,
-          });
-        }
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'manager_requests',
-      },
-      (payload) => {
-        const request: any = payload.new;
-
-        if (
-          request.status === 'unresolved' &&
-          'Notification' in window &&
-          Notification.permission === 'granted'
-        ) {
-          new Notification('🔁 Demanda marcada como não resolvida', {
-            body: request.urgent
-              ? `URGENTE: ${request.subject}`
-              : request.subject,
-            requireInteraction: true,
-          });
-        }
-      }
-    )
-    .subscribe();
-
-  return channel;
-}
-
   if (loading) {
-
-
     return (
       <div className="flex items-center justify-center h-screen">
         Carregando...
       </div>
     );
   }
-
-async function checkPendingIndicators(userId: string, role?: string) {
-  if (role !== 'manager') return;
-
-  const today = new Date().toLocaleDateString('sv-SE', {
-    timeZone: 'America/Sao_Paulo',
-  });
-
-  const { data: platforms } = await supabase
-    .from('platforms')
-    .select('*');
-
-  const { data: images } = await supabase
-    .from('platform_indicator_images')
-    .select('*')
-    .eq('reference_date', today);
-
-  const pending = platforms?.filter((p) => {
-    return !images?.some(
-      (img) =>
-        img.platform_id === p.id &&
-        img.responsible_id === p.responsible_id
-    );
-  });
-
-  if (!pending || pending.length === 0) return;
-
-  const message = `${pending.length} indicadores não enviados`;
-
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('📊 Indicadores pendentes', {
-      body: message,
-      requireInteraction: true,
-    });
-  }
-}
 
   return (
     <div className="flex h-screen bg-gray-50">
