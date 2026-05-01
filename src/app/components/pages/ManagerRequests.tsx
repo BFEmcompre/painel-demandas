@@ -34,15 +34,21 @@ export function ManagerRequests() {
     setRequests(data || []);
   }
 
-  function isOverdue(request: ManagerRequest) {
-    return request.status === 'open' && new Date(request.due_at) < new Date();
-  }
+function isOverdue(request: ManagerRequest) {
+  return (
+    ['open', 'unresolved'].includes(request.status) &&
+    new Date(request.due_at) < new Date()
+  );
+}
 
   const filteredRequests = requests.filter((request) => {
-    if (filter === 'open') return request.status === 'open' && !isOverdue(request);
+    if (filter === 'open') {
+  return ['open', 'unresolved'].includes(request.status) && !isOverdue(request);
+}
     if (filter === 'overdue') return isOverdue(request);
-    if (filter === 'answered') return request.status === 'answered';
+if (filter === 'answered') return request.status === 'answered';
 if (filter === 'urgent') return request.urgent === true;
+if (filter === 'unresolved') return request.status === 'unresolved';
 return true;
   });
 
@@ -84,6 +90,14 @@ const orderedRequests = [...filteredRequests].sort((a, b) => {
   onClick={() => setFilter('urgent')}
 >
   Urgentes
+</Button>
+
+<Button
+  type="button"
+  variant={filter === 'unresolved' ? 'default' : 'outline'}
+  onClick={() => setFilter('unresolved')}
+>
+  Não resolvidas
 </Button>
 
         <Button
@@ -131,14 +145,15 @@ const orderedRequests = [...filteredRequests].sort((a, b) => {
               </div>
 
               <div className="text-right">
-                {request.status === 'answered' ? (
-                  <p className="text-green-600 text-sm font-medium">Respondida</p>
-                ) : isOverdue(request) ? (
-                  <p className="text-red-600 text-sm font-medium">Vencida</p>
-                ) : (
-                  <p className="text-yellow-600 text-sm font-medium">Em aberto</p>
-                )}
-
+{request.status === 'answered' ? (
+  <p className="text-green-600 text-sm font-medium">Respondida</p>
+) : isOverdue(request) ? (
+  <p className="text-red-600 text-sm font-medium">Vencida</p>
+) : request.status === 'unresolved' ? (
+  <p className="text-orange-600 text-sm font-medium">Não resolvida</p>
+) : (
+  <p className="text-yellow-600 text-sm font-medium">Em aberto</p>
+)}
                 <p className="text-xs text-gray-500 mt-2">
                   Prazo: {new Date(request.due_at).toLocaleString('pt-BR')}
                 </p>

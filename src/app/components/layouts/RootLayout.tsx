@@ -21,14 +21,28 @@ export function RootLayout() {
   const [currentUserId, setCurrentUserId] = useState('');
 
 useEffect(() => {
+  let managerRequestsChannel: any = null;
+
   requestNotificationPermission();
   checkUserAndOverdueTasks();
 
+  async function setupRealtime() {
+    managerRequestsChannel = await subscribeManagerRequests();
+  }
+
+  setupRealtime();
+
   const interval = setInterval(() => {
     checkUserAndOverdueTasks();
-}, 300000);
+  }, 300000);
 
-  return () => clearInterval(interval);
+  return () => {
+    clearInterval(interval);
+
+    if (managerRequestsChannel) {
+      supabase.removeChannel(managerRequestsChannel);
+    }
+  };
 }, []);
 
   async function requestNotificationPermission() {
@@ -68,21 +82,6 @@ async function checkManagerRequests(userId: string, role?: string) {
     .select('*');
 
   if (!requests || requests.length === 0) return;
-
-  if (role === 'manager') {
-    const openRequests = requests.filter((r) => r.status === 'open');
-
-    const newRequests = openRequests.filter((r) => {
-      const created = new Date(r.created_at);
-      return now.getTime() - created.getTime() < 60000;
-    });
-
-    if (newRequests.length > 0 && Notification.permission === 'granted') {
-      new Notification('📩 Nova demanda recebida', {
-        body: `${newRequests.length} nova(s) demanda(s)`,
-        requireInteraction: true,
-      });
-    }
 
     const overdue = openRequests.filter((r) => new Date(r.due_at) < now);
 
@@ -228,6 +227,74 @@ console.log('Mensagem:', message);
 
     setShowAlert(false);
   }
+
+async function subscribeManagerRequests() {
+  const { data: authData } = await supabase.auth.getUser();
+
+  if (!authData.user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', authData.user.id)
+    .single();
+
+  const isManager = ['manager', 'admin', 'gestor'].includes(
+    String(profile?.role).toLowerCase()
+  );
+
+  if (!isManager) return null;
+
+  const channel = supabase
+    .channel('manager-requests-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'manager_requests',
+      },
+      (payload) => {
+        const request: any = payload.new;
+
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('📩 Nova demanda recebida', {
+            body: request.urgent
+              ? `URGENTE: ${request.subject}`
+              : request.subject,
+            requireInteraction: true,
+          });
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'manager_requests',
+      },
+      (payload) => {
+        const request: any = payload.new;
+
+        if (
+          request.status === 'unresolved' &&
+          'Notification' in window &&
+          Notification.permission === 'granted'
+        ) {
+          new Notification('🔁 Demanda marcada como não resolvida', {
+            body: request.urgent
+              ? `URGENTE: ${request.subject}`
+              : request.subject,
+            requireInteraction: true,
+          });
+        }
+      }
+    )
+    .subscribe();
+
+  return channel;
+}
 
   if (loading) {
 

@@ -18,6 +18,7 @@ type ManagerRequest = {
 export function MyManagerRequests() {
   const [requests, setRequests] = useState<ManagerRequest[]>([]);
   const [filter, setFilter] = useState('all');
+const [newDueDates, setNewDueDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadRequests();
@@ -37,11 +38,12 @@ export function MyManagerRequests() {
     setRequests(data || []);
   }
 
-  const filteredRequests = requests.filter((request) => {
-    if (filter === 'open') return request.status === 'open';
-    if (filter === 'answered') return request.status === 'answered';
-    return true;
-  });
+const filteredRequests = requests.filter((request) => {
+  if (filter === 'open') return request.status === 'open';
+  if (filter === 'answered') return request.status === 'answered';
+  if (filter === 'unresolved') return request.status === 'unresolved';
+  return true;
+});
 
 
 async function markResponseAsViewed(requestId: string) {
@@ -67,6 +69,48 @@ async function markResponseAsViewed(requestId: string) {
     return;
   }
 
+  loadRequests();
+}
+
+async function markAsUnresolved(requestId: string) {
+  const newDueAt = newDueDates[requestId];
+
+  if (!newDueAt) {
+    alert('Defina um novo prazo para resposta');
+    return;
+  }
+
+  const { data: authData } = await supabase.auth.getUser();
+
+  if (!authData.user) return;
+
+  const { error } = await supabase
+    .from('manager_requests')
+    .update({
+      status: 'unresolved',
+      due_at: newDueAt,
+    })
+    .eq('id', requestId);
+
+  if (error) {
+    alert(error.message || 'Erro ao marcar como não resolvida');
+    return;
+  }
+
+  await supabase
+    .from('manager_request_alert_views')
+    .upsert(
+      {
+        request_id: requestId,
+        user_id: authData.user.id,
+        alert_type: 'response_viewed',
+      },
+      {
+        onConflict: 'request_id,user_id,alert_type',
+      }
+    );
+
+  alert('Demanda marcada como não resolvida e reenviada ao gestor');
   loadRequests();
 }
 
@@ -103,6 +147,13 @@ async function markResponseAsViewed(requestId: string) {
         >
           Respondidas
         </Button>
+<Button
+  type="button"
+  variant={filter === 'unresolved' ? 'default' : 'outline'}
+  onClick={() => setFilter('unresolved')}
+>
+  Não resolvidas
+</Button>
       </div>
 
       {filteredRequests.length === 0 ? (
@@ -132,15 +183,19 @@ async function markResponseAsViewed(requestId: string) {
               </div>
 
               <div>
-                {request.status === 'answered' ? (
-                  <span className="text-green-600 text-sm font-medium">
-                    Respondida
-                  </span>
-                ) : (
-                  <span className="text-yellow-600 text-sm font-medium">
-                    Em aberto
-                  </span>
-                )}
+{request.status === 'answered' ? (
+  <span className="text-green-600 text-sm font-medium">
+    Respondida
+  </span>
+) : request.status === 'unresolved' ? (
+  <span className="text-orange-600 text-sm font-medium">
+    Não resolvida
+  </span>
+) : (
+  <span className="text-yellow-600 text-sm font-medium">
+    Em aberto
+  </span>
+)}
               </div>
             </div>
 
@@ -158,14 +213,37 @@ async function markResponseAsViewed(requestId: string) {
                     : ''}
                 </p>
 			
-		<Button
-  type="button"
-  variant="outline"
-  className="mt-3"
-  onClick={() => markResponseAsViewed(request.id)}
->
-  Marcar resposta como vista
-</Button>
+<div className="mt-4 p-3 border rounded-lg bg-orange-50">
+  <p className="text-sm font-medium text-orange-800 mb-2">
+    A resposta não resolveu?
+  </p>
+
+  <div className="space-y-2">
+    <label className="text-sm text-gray-700">
+      Novo prazo para resposta
+    </label>
+
+    <input
+      type="datetime-local"
+      value={newDueDates[request.id] || ''}
+      onChange={(e) =>
+        setNewDueDates((current) => ({
+          ...current,
+          [request.id]: e.target.value,
+        }))
+      }
+      className="border px-3 py-2 rounded w-full"
+    />
+
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => markAsUnresolved(request.id)}
+    >
+      Marcar como não resolvida
+    </Button>
+  </div>
+</div>
 	  	
               </div>
             )}
