@@ -81,7 +81,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900">Painel de Demandas</h1>
+        <h1 className="text-xl font-semibold text-gray-900">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
         <p className="text-sm text-gray-500 mt-1">Sistema Diário</p>
       </div>
 
