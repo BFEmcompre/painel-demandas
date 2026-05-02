@@ -22,7 +22,11 @@ export function CreateDemand() {
   const [selectedResponsibles, setSelectedResponsibles] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+ const todayBrazil = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
+
+const [date, setDate] = useState(todayBrazil);
   const [deadline, setDeadline] = useState('17:00');
   const [isRecurring, setIsRecurring] = useState(false);
   const [checklistItems, setChecklistItems] = useState<string[]>(['']);
@@ -76,7 +80,8 @@ export function CreateDemand() {
       return;
     }
 
-    const deadlineFull = `${date}T${deadline}`;
+const taskDate = isRecurring ? todayBrazil : date;
+const deadlineFull = `${taskDate}T${deadline}`;
 
     const responsibleNames = responsibles
       .filter((r) => selectedResponsibles.includes(r.id))
@@ -90,7 +95,7 @@ export function CreateDemand() {
         description,
         responsible_id: selectedResponsibles[0],
         responsible_name: responsibleNames,
-        date,
+        date: taskDate,
         deadline: deadlineFull,
         status: 'pending',
         is_recurring: isRecurring,
