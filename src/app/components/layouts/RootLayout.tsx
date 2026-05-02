@@ -89,10 +89,11 @@ export function RootLayout() {
     await checkPendingIndicators(userId, profile?.role);
     await checkManagerRequests(userId, profile?.role);
 
-    const { data: allPendingTasks } = await supabase
-      .from('tasks')
-      .select('id, title, deadline, status')
-      .in('status', ['pending', 'overdue']);
+const { data: allPendingTasks } = await supabase
+  .from('tasks')
+  .select('id, title, deadline, status, is_recurring')
+  .in('status', ['pending', 'overdue'])
+  .or('is_recurring.eq.false,is_recurring.is.null');
 
     const overdueTasks =
       allPendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
