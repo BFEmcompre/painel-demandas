@@ -91,12 +91,13 @@ export function RootLayout() {
 
 const { data: allPendingTasks } = await supabase
   .from('tasks')
-  .select('id, title, deadline, status, is_recurring')
+  .select('id, title, deadline, status, is_recurring, completed_at')
   .in('status', ['pending', 'overdue'])
+  .is('completed_at', null)
   .or('is_recurring.eq.false,is_recurring.is.null');
 
     const overdueTasks =
-      allPendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
+  allPendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
 
     if (overdueTasks.length === 0) {
       setShowAlert(false);
