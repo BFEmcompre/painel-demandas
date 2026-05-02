@@ -130,7 +130,7 @@ setLogs(logsData || []);
     setNewPhotos((current) => current.filter((_, i) => i !== index));
   };
 
-  const toggleChecklist = async (itemId: string, current: boolean) => {
+const toggleChecklist = async (itemId: string, current: boolean) => {
   if (!task || updatingChecklistId === itemId) return;
 
   const nextValue = !current;
@@ -138,7 +138,7 @@ setLogs(logsData || []);
   setUpdatingChecklistId(itemId);
   setClickedChecklistId(itemId);
 
-  // Atualiza visualmente na hora
+  // Marca/desmarca na tela imediatamente
   setChecklist((currentItems) =>
     currentItems.map((item) =>
       item.id === itemId ? { ...item, completed: nextValue } : item
@@ -151,57 +151,56 @@ setLogs(logsData || []);
     );
   }, 500);
 
-  const { data: authData } = await supabase.auth.getUser();
+  try {
+    const { data: authData } = await supabase.auth.getUser();
 
-  if (!authData?.user) {
+    if (!authData?.user) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', authData.user.id)
+      .single();
+
+    const { error: updateError } = await supabase
+      .from('checklist_items')
+      .update({ completed: nextValue })
+      .eq('id', itemId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    const { error: logError } = await supabase
+      .from('checklist_item_logs')
+      .insert({
+        checklist_item_id: itemId,
+        task_id: task.id,
+        user_id: authData.user.id,
+        user_name: profile?.name || 'Usuário',
+        action: nextValue ? 'marcou' : 'desmarcou',
+      });
+
+    if (logError) {
+      console.error(logError);
+    }
+
+    await loadTask();
+  } catch (error: any) {
+    // Volta visualmente se der erro
     setChecklist((currentItems) =>
       currentItems.map((item) =>
         item.id === itemId ? { ...item, completed: current } : item
       )
     );
+
+    toast.error(error?.message || 'Erro ao atualizar checklist');
+  } finally {
+    // Garante que o "Salvando..." sempre saia
     setUpdatingChecklistId(null);
-    return;
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name')
-    .eq('id', authData.user.id)
-    .single();
-
-  const { error: updateError } = await supabase
-    .from('checklist_items')
-    .update({ completed: nextValue })
-    .eq('id', itemId);
-
-  if (updateError) {
-    setChecklist((currentItems) =>
-      currentItems.map((item) =>
-        item.id === itemId ? { ...item, completed: current } : item
-      )
-    );
-
-    toast.error(updateError.message || 'Erro ao atualizar checklist');
-    setUpdatingChecklistId(null);
-    return;
-  }
-
-await supabase.from('checklist_item_logs').insert({
-  checklist_item_id: itemId,
-  task_id: task.id,
-  user_id: authData.user.id,
-  user_name: profile?.name || 'Usuário',
-  action: nextValue ? 'marcou' : 'desmarcou',
-  created_at: new Date().toISOString(),
-});
-
-  if (logError) {
-    console.error(logError);
-  }
-
-  await loadTask();
-
-  setUpdatingChecklistId(null);
 };
 
 const handleCompleteTask = async () => {
