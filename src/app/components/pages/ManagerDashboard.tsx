@@ -23,6 +23,7 @@ type Task = {
   deadline: string;
   date: string;
   status: 'pending' | 'completed' | 'overdue';
+  is_recurring?: boolean | null;
 };
 
 type Responsible = {

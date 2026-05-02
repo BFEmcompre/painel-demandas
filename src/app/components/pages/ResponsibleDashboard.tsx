@@ -144,13 +144,13 @@ await generateTodayRecurringTasks(today);
   const taskIds = relations.map((r) => r.task_id);
 
   // 🔥 2. Buscar tarefas reais
-  const { data: tasksData } = await supabase
-    .from('tasks')
-    .select('*')
-    .in('id', taskIds)
-    .eq('date', today)
-    .eq('is_recurring', false) 
-    .order('deadline');
+const { data: tasksData } = await supabase
+  .from('tasks')
+  .select('*')
+  .in('id', taskIds)
+  .eq('date', today)
+  .or('is_recurring.eq.false,is_recurring.is.null')
+  .order('deadline');
 
   setTasks(tasksData || []);
 }
