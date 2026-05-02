@@ -43,7 +43,9 @@ async function loadUserAndTasks() {
 
   setUser(profile);
 
-  const today = new Date().toISOString().split('T')[0];
+const today = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
 
   // 🔥 1. Buscar vínculos do usuário com tarefas
   const { data: relations } = await supabase

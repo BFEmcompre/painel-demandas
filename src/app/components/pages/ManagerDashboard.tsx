@@ -56,7 +56,9 @@ export function ManagerDashboard() {
     setResponsibles(respData || []);
   }
 
-  const today = new Date().toISOString().split('T')[0];
+ const today = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
   const todayTasks = tasks.filter((t) => t.date === today);
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;
