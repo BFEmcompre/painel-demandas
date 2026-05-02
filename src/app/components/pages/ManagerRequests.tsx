@@ -12,7 +12,9 @@ type ManagerRequest = {
   due_at: string;
   status: string;
   created_at: string;
-urgent: boolean;
+  urgent: boolean;
+  response_text: string | null;
+  responded_at: string | null;
 };
 
 export function ManagerRequests() {
@@ -34,40 +36,68 @@ export function ManagerRequests() {
     setRequests(data || []);
   }
 
-function isOverdue(request: ManagerRequest) {
-  return (
-    ['open', 'unresolved'].includes(request.status) &&
-    new Date(request.due_at) < new Date()
-  );
-}
+  function isOverdue(request: ManagerRequest) {
+    return (
+      ['open', 'unresolved'].includes(request.status) &&
+      new Date(request.due_at) < new Date()
+    );
+  }
+
+  function getStatusLabel(status: string) {
+    if (status === 'open') return 'Em aberto';
+    if (status === 'answered') return 'Respondida';
+    if (status === 'unresolved') return 'Não resolvida';
+    if (status === 'closed') return 'Finalizada';
+    return status;
+  }
+
+  function getStatusClass(status: string) {
+    if (status === 'open') return 'bg-yellow-100 text-yellow-700';
+    if (status === 'answered') return 'bg-blue-100 text-blue-700';
+    if (status === 'unresolved') return 'bg-orange-100 text-orange-700';
+    if (status === 'closed') return 'bg-green-100 text-green-700';
+    return 'bg-gray-100 text-gray-700';
+  }
 
   const filteredRequests = requests.filter((request) => {
     if (filter === 'open') {
-  return ['open', 'unresolved'].includes(request.status) && !isOverdue(request);
-}
+      return ['open', 'unresolved'].includes(request.status) && !isOverdue(request);
+    }
+
     if (filter === 'overdue') return isOverdue(request);
-if (filter === 'answered') return request.status === 'answered';
-if (filter === 'urgent') return request.urgent === true;
-if (filter === 'unresolved') return request.status === 'unresolved';
-return true;
+    if (filter === 'urgent') return request.urgent === true;
+    if (filter === 'unresolved') return request.status === 'unresolved';
+    if (filter === 'answered') return request.status === 'answered';
+    if (filter === 'closed') return request.status === 'closed';
+
+    return true;
   });
 
-const orderedRequests = [...filteredRequests].sort((a, b) => {
-  if (a.urgent && !b.urgent) return -1;
-  if (!a.urgent && b.urgent) return 1;
+  const orderedRequests = [...filteredRequests].sort((a, b) => {
+    if (a.urgent && !b.urgent) return -1;
+    if (!a.urgent && b.urgent) return 1;
 
-  return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
-});
+    const aOverdue = isOverdue(a);
+    const bOverdue = isOverdue(b);
 
+    if (aOverdue && !bOverdue) return -1;
+    if (!aOverdue && bOverdue) return 1;
+
+    return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
+  });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Demandas Recebidas</h1>
-        <p className="text-gray-500 mt-1">Acompanhe demandas enviadas pelos responsáveis</p>
+        <h1 className="text-3xl font-semibold text-gray-900">
+          Demandas Recebidas
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Acompanhe demandas enviadas pelos responsáveis
+        </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant={filter === 'open' ? 'default' : 'outline'}
@@ -84,21 +114,21 @@ const orderedRequests = [...filteredRequests].sort((a, b) => {
           Vencidas
         </Button>
 
-<Button
-  type="button"
-  variant={filter === 'urgent' ? 'default' : 'outline'}
-  onClick={() => setFilter('urgent')}
->
-  Urgentes
-</Button>
+        <Button
+          type="button"
+          variant={filter === 'urgent' ? 'default' : 'outline'}
+          onClick={() => setFilter('urgent')}
+        >
+          Urgentes
+        </Button>
 
-<Button
-  type="button"
-  variant={filter === 'unresolved' ? 'default' : 'outline'}
-  onClick={() => setFilter('unresolved')}
->
-  Não resolvidas
-</Button>
+        <Button
+          type="button"
+          variant={filter === 'unresolved' ? 'default' : 'outline'}
+          onClick={() => setFilter('unresolved')}
+        >
+          Não resolvidas
+        </Button>
 
         <Button
           type="button"
@@ -106,6 +136,14 @@ const orderedRequests = [...filteredRequests].sort((a, b) => {
           onClick={() => setFilter('answered')}
         >
           Respondidas
+        </Button>
+
+        <Button
+          type="button"
+          variant={filter === 'closed' ? 'default' : 'outline'}
+          onClick={() => setFilter('closed')}
+        >
+          Finalizadas
         </Button>
 
         <Button
@@ -122,45 +160,111 @@ const orderedRequests = [...filteredRequests].sort((a, b) => {
           Nenhuma demanda encontrada.
         </Card>
       ) : (
-        orderedRequests.map((request) => (
-<Card
-  key={request.id}
-  className="p-5 cursor-pointer hover:bg-gray-50"
-  onClick={() => navigate(`/demandas-gestor/${request.id}`)}
->
-            <div className="flex justify-between gap-4">
-              <div>
-                <h2 className="font-semibold text-lg">{request.subject}</h2>
-                 {request.urgent && (
-  <p className="text-red-600 text-sm font-semibold mt-1">
-    ⚠ Urgente
-  </p>
-)}
-                <p className="text-sm text-gray-500">
-                  Enviado por: {request.requester_name}
-                </p>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  {request.message}
-                </p>
-              </div>
+        <div className="space-y-4">
+          {orderedRequests.map((request) => (
+            <Card
+              key={request.id}
+              className={`p-6 cursor-pointer hover:bg-gray-50 transition-colors ${
+                request.urgent ? 'border-red-200' : ''
+              }`}
+              onClick={() => navigate(`/demandas-gestor/${request.id}`)}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {request.subject}
+                      </h2>
 
-              <div className="text-right">
-{request.status === 'answered' ? (
-  <p className="text-green-600 text-sm font-medium">Respondida</p>
-) : isOverdue(request) ? (
-  <p className="text-red-600 text-sm font-medium">Vencida</p>
-) : request.status === 'unresolved' ? (
-  <p className="text-orange-600 text-sm font-medium">Não resolvida</p>
-) : (
-  <p className="text-yellow-600 text-sm font-medium">Em aberto</p>
-)}
-                <p className="text-xs text-gray-500 mt-2">
-                  Prazo: {new Date(request.due_at).toLocaleString('pt-BR')}
-                </p>
+                      {request.urgent && (
+                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                          ⚠ URGENTE
+                        </span>
+                      )}
+
+                      {isOverdue(request) && (
+                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                          Vencida
+                        </span>
+                      )}
+
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
+                          request.status
+                        )}`}
+                      >
+                        {getStatusLabel(request.status)}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-500">
+                      Enviado por: {request.requester_name}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      Criada em:{' '}
+                      {new Date(request.created_at).toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      Prazo:{' '}
+                      {new Date(request.due_at).toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Demanda enviada
+                  </p>
+
+                  <p className="text-gray-800 whitespace-pre-wrap line-clamp-3">
+                    {request.message}
+                  </p>
+                </div>
+
+                {request.response_text && (
+                  <div className="rounded-lg border bg-blue-50 p-4">
+                    <p className="text-sm font-medium text-blue-800 mb-2">
+                      Última resposta do gestor
+                    </p>
+
+                    <p className="text-gray-800 whitespace-pre-wrap line-clamp-3">
+                      {request.response_text}
+                    </p>
+
+                    {request.responded_at && (
+                      <p className="text-xs text-gray-500 mt-3">
+                        Respondida em:{' '}
+                        {new Date(request.responded_at).toLocaleString('pt-BR', {
+                          timeZone: 'America/Sao_Paulo',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/demandas-gestor/${request.id}`);
+                    }}
+                  >
+                    Abrir demanda
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
