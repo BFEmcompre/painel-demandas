@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { supabase } from '../../lib/supabase';
 
 type ManagerRequest = {
@@ -18,7 +19,9 @@ type ManagerRequest = {
 export function MyManagerRequests() {
   const [requests, setRequests] = useState<ManagerRequest[]>([]);
   const [filter, setFilter] = useState('all');
-const [newDueDates, setNewDueDates] = useState<Record<string, string>>({});
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [openUnresolvedId, setOpenUnresolvedId] = useState<string | null>(null);
+  const [newDueDates, setNewDueDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadRequests();
@@ -38,22 +41,84 @@ const [newDueDates, setNewDueDates] = useState<Record<string, string>>({});
     setRequests(data || []);
   }
 
-const filteredRequests = requests.filter((request) => {
-  if (filter === 'open') return request.status === 'open';
-  if (filter === 'answered') return request.status === 'answered';
-  if (filter === 'unresolved') return request.status === 'unresolved';
-  return true;
-});
+  function getStatusLabel(status: string) {
+    if (status === 'open') return 'Em aberto';
+    if (status === 'answered') return 'Respondida';
+    if (status === 'unresolved') return 'Não resolvida';
+    if (status === 'closed') return 'Finalizada';
+    return status;
+  }
 
+  function getStatusClass(status: string) {
+    if (status === 'open') return 'bg-yellow-100 text-yellow-700';
+    if (status === 'answered') return 'bg-blue-100 text-blue-700';
+    if (status === 'unresolved') return 'bg-orange-100 text-orange-700';
+    if (status === 'closed') return 'bg-green-100 text-green-700';
+    return 'bg-gray-100 text-gray-700';
+  }
 
-async function markResponseAsViewed(requestId: string) {
-  const { data: authData } = await supabase.auth.getUser();
+  const filteredRequests = requests.filter((request) => {
+    if (filter === 'open') return request.status === 'open';
+    if (filter === 'answered') return request.status === 'answered';
+    if (filter === 'unresolved') return request.status === 'unresolved';
+    if (filter === 'closed') return request.status === 'closed';
+    return true;
+  });
 
-  if (!authData.user) return;
+  async function handleMarkAsUnresolved(requestId: string) {
+    const newDueAt = newDueDates[requestId];
 
-  const { error } = await supabase
-    .from('manager_request_alert_views')
-    .upsert(
+    if (!newDueAt) {
+      alert('Defina um novo prazo para resposta');
+      return;
+    }
+
+    setLoadingId(requestId);
+
+    const { error } = await supabase
+      .from('manager_requests')
+      .update({
+        status: 'unresolved',
+        due_at: newDueAt,
+      })
+      .eq('id', requestId);
+
+    if (error) {
+      alert(error.message || 'Erro ao marcar como não resolvida');
+      setLoadingId(null);
+      return;
+    }
+
+    setOpenUnresolvedId(null);
+    setLoadingId(null);
+    await loadRequests();
+    alert('Demanda marcada como não resolvida!');
+  }
+
+  async function handleMarkAsFinalized(requestId: string) {
+    setLoadingId(requestId);
+
+    const { data: authData } = await supabase.auth.getUser();
+
+    if (!authData.user) {
+      setLoadingId(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('manager_requests')
+      .update({
+        status: 'closed',
+      })
+      .eq('id', requestId);
+
+    if (error) {
+      alert(error.message || 'Erro ao finalizar demanda');
+      setLoadingId(null);
+      return;
+    }
+
+    await supabase.from('manager_request_alert_views').upsert(
       {
         request_id: requestId,
         user_id: authData.user.id,
@@ -64,66 +129,23 @@ async function markResponseAsViewed(requestId: string) {
       }
     );
 
-  if (error) {
-    alert(error.message || 'Erro ao marcar como visto');
-    return;
+    setLoadingId(null);
+    await loadRequests();
+    alert('Demanda finalizada com sucesso!');
   }
-
-  loadRequests();
-}
-
-async function markAsUnresolved(requestId: string) {
-  const newDueAt = newDueDates[requestId];
-
-  if (!newDueAt) {
-    alert('Defina um novo prazo para resposta');
-    return;
-  }
-
-  const { data: authData } = await supabase.auth.getUser();
-
-  if (!authData.user) return;
-
-  const { error } = await supabase
-    .from('manager_requests')
-    .update({
-      status: 'unresolved',
-      due_at: newDueAt,
-    })
-    .eq('id', requestId);
-
-  if (error) {
-    alert(error.message || 'Erro ao marcar como não resolvida');
-    return;
-  }
-
-  await supabase
-    .from('manager_request_alert_views')
-    .upsert(
-      {
-        request_id: requestId,
-        user_id: authData.user.id,
-        alert_type: 'response_viewed',
-      },
-      {
-        onConflict: 'request_id,user_id,alert_type',
-      }
-    );
-
-  alert('Demanda marcada como não resolvida e reenviada ao gestor');
-  loadRequests();
-}
-
-
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Minhas Demandas ao Gestor</h1>
-        <p className="text-gray-500 mt-1">Acompanhe os retornos do gestor</p>
+        <h1 className="text-3xl font-semibold text-gray-900">
+          Minhas Demandas ao Gestor
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Acompanhe os retornos do gestor de forma organizada
+        </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant={filter === 'all' ? 'default' : 'outline'}
@@ -147,13 +169,22 @@ async function markAsUnresolved(requestId: string) {
         >
           Respondidas
         </Button>
-<Button
-  type="button"
-  variant={filter === 'unresolved' ? 'default' : 'outline'}
-  onClick={() => setFilter('unresolved')}
->
-  Não resolvidas
-</Button>
+
+        <Button
+          type="button"
+          variant={filter === 'unresolved' ? 'default' : 'outline'}
+          onClick={() => setFilter('unresolved')}
+        >
+          Não resolvidas
+        </Button>
+
+        <Button
+          type="button"
+          variant={filter === 'closed' ? 'default' : 'outline'}
+          onClick={() => setFilter('closed')}
+        >
+          Finalizadas
+        </Button>
       </div>
 
       {filteredRequests.length === 0 ? (
@@ -161,94 +192,158 @@ async function markAsUnresolved(requestId: string) {
           Nenhuma demanda encontrada.
         </Card>
       ) : (
-        filteredRequests.map((request) => (
-          <Card key={request.id} className="p-5">
-            <div className="flex justify-between gap-4">
-              <div>
-                <h2 className="font-semibold text-lg">{request.subject}</h2>
+        <div className="space-y-4">
+          {filteredRequests.map((request) => (
+            <Card key={request.id} className="p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        {request.subject}
+                      </h2>
 
-                {request.urgent && (
-                  <p className="text-red-600 text-sm font-semibold mt-1">
-                    ⚠ Urgente
+                      {request.urgent && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          Urgente
+                        </span>
+                      )}
+
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(
+                          request.status
+                        )}`}
+                      >
+                        {getStatusLabel(request.status)}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-500">
+                      Criada em:{' '}
+                      {new Date(request.created_at).toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      Prazo:{' '}
+                      {new Date(request.due_at).toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Sua demanda
                   </p>
+                  <p className="text-gray-800 whitespace-pre-wrap">
+                    {request.message}
+                  </p>
+                </div>
+
+                {request.response_text && (
+                  <div className="rounded-lg border bg-blue-50 p-4">
+                    <p className="text-sm font-medium text-blue-800 mb-2">
+                      Resposta do gestor
+                    </p>
+                    <p className="text-gray-800 whitespace-pre-wrap">
+                      {request.response_text}
+                    </p>
+
+                    {request.responded_at && (
+                      <p className="text-xs text-gray-500 mt-3">
+                        Respondida em:{' '}
+                        {new Date(request.responded_at).toLocaleString('pt-BR', {
+                          timeZone: 'America/Sao_Paulo',
+                        })}
+                      </p>
+                    )}
+                  </div>
                 )}
 
-                <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
-                  {request.message}
-                </p>
+                {(request.status === 'answered' || request.status === 'unresolved') && (
+                  <div className="rounded-lg border bg-amber-50 p-4 space-y-3">
+                    <p className="text-sm font-medium text-amber-800">
+                      Se a resposta ainda não resolveu, você pode pedir continuidade
+                      nesta mesma demanda.
+                    </p>
 
-                <p className="text-xs text-gray-500 mt-3">
-                  Prazo: {new Date(request.due_at).toLocaleString('pt-BR')}
-                </p>
+                    {openUnresolvedId === request.id && (
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Novo prazo para resposta
+                        </label>
+
+                        <Input
+                          type="datetime-local"
+                          value={newDueDates[request.id] || ''}
+                          onChange={(e) =>
+                            setNewDueDates((prev) => ({
+                              ...prev,
+                              [request.id]: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {request.status !== 'unresolved' && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            setOpenUnresolvedId((prev) =>
+                              prev === request.id ? null : request.id
+                            )
+                          }
+                        >
+                          {openUnresolvedId === request.id
+                            ? 'Cancelar'
+                            : 'Marcar como não resolvida'}
+                        </Button>
+                      )}
+
+                      {openUnresolvedId === request.id && (
+                        <Button
+                          type="button"
+                          onClick={() => handleMarkAsUnresolved(request.id)}
+                          disabled={loadingId === request.id}
+                          className="bg-orange-600 hover:bg-orange-700"
+                        >
+                          {loadingId === request.id
+                            ? 'Salvando...'
+                            : 'Confirmar não resolvida'}
+                        </Button>
+                      )}
+
+                      <Button
+                        type="button"
+                        onClick={() => handleMarkAsFinalized(request.id)}
+                        disabled={loadingId === request.id}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {loadingId === request.id
+                          ? 'Finalizando...'
+                          : 'Marcar como finalizada'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {request.status === 'closed' && (
+                  <div className="rounded-lg border bg-green-50 p-4">
+                    <p className="text-sm font-medium text-green-700">
+                      Esta demanda foi finalizada e não gerará mais notificações.
+                    </p>
+                  </div>
+                )}
               </div>
-
-              <div>
-{request.status === 'answered' ? (
-  <span className="text-green-600 text-sm font-medium">
-    Respondida
-  </span>
-) : request.status === 'unresolved' ? (
-  <span className="text-orange-600 text-sm font-medium">
-    Não resolvida
-  </span>
-) : (
-  <span className="text-yellow-600 text-sm font-medium">
-    Em aberto
-  </span>
-)}
-              </div>
-            </div>
-
-            {request.status === 'answered' && (
-              <div className="mt-5 border-t pt-4">
-                <h3 className="font-semibold mb-2">Resposta do gestor</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {request.response_text}
-                </p>
-
-                <p className="text-xs text-gray-500 mt-2">
-                  Respondida em:{' '}
-                  {request.responded_at
-                    ? new Date(request.responded_at).toLocaleString('pt-BR')
-                    : ''}
-                </p>
-			
-<div className="mt-4 p-3 border rounded-lg bg-orange-50">
-  <p className="text-sm font-medium text-orange-800 mb-2">
-    A resposta não resolveu?
-  </p>
-
-  <div className="space-y-2">
-    <label className="text-sm text-gray-700">
-      Novo prazo para resposta
-    </label>
-
-    <input
-      type="datetime-local"
-      value={newDueDates[request.id] || ''}
-      onChange={(e) =>
-        setNewDueDates((current) => ({
-          ...current,
-          [request.id]: e.target.value,
-        }))
-      }
-      className="border px-3 py-2 rounded w-full"
-    />
-
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => markAsUnresolved(request.id)}
-    >
-      Marcar como não resolvida
-    </Button>
-  </div>
-</div>
-	  	
-              </div>
-            )}
-          </Card>
-        ))
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
