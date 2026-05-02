@@ -424,7 +424,7 @@ const { error } = await supabase
       </Card>
 
       <Card className="p-6 mb-6">
-        <h2 className="font-semibold mb-3">Fotos de comprovação</h2>
+        <h2 className="font-semibold mb-3">Imagens para verificação</h2>
 
         {totalPhotos > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
