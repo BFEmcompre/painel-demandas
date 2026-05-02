@@ -44,8 +44,94 @@ export function ManagerDashboard() {
     loadData();
   }, []);
 
-  async function loadData() {
-    const { data: tasksData } = await supabase.from('tasks').select('*');
+async function generateTodayRecurringTasks(today: string) {
+  const { data: recurringTasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('is_recurring', true)
+    .lte('date', today);
+
+  if (!recurringTasks || recurringTasks.length === 0) return;
+
+  for (const recurringTask of recurringTasks) {
+    const { data: existingTask } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('date', today)
+      .eq('title', recurringTask.title)
+      .eq('description', recurringTask.description)
+      .eq('recurring_deadline', recurringTask.recurring_deadline)
+      .eq('responsible_id', recurringTask.responsible_id)
+      .eq('is_recurring', false)
+      .maybeSingle();
+
+    if (existingTask) continue;
+
+    const deadlineTime = recurringTask.recurring_deadline || '17:00';
+    const deadlineFull = `${today}T${deadlineTime}`;
+
+    const { data: newTask, error: taskError } = await supabase
+      .from('tasks')
+      .insert({
+        title: recurringTask.title,
+        description: recurringTask.description,
+        responsible_id: recurringTask.responsible_id,
+        responsible_name: recurringTask.responsible_name,
+        date: today,
+        deadline: deadlineFull,
+        status: 'pending',
+        is_recurring: false,
+        recurring_deadline: recurringTask.recurring_deadline,
+      })
+      .select()
+      .single();
+
+    if (taskError || !newTask) {
+      console.error(taskError);
+      continue;
+    }
+
+    const { data: oldResponsibles } = await supabase
+      .from('task_responsibles')
+      .select('responsible_id, responsible_name')
+      .eq('task_id', recurringTask.id);
+
+    if (oldResponsibles && oldResponsibles.length > 0) {
+      await supabase.from('task_responsibles').insert(
+        oldResponsibles.map((item) => ({
+          task_id: newTask.id,
+          responsible_id: item.responsible_id,
+          responsible_name: item.responsible_name,
+        }))
+      );
+    }
+
+    const { data: oldChecklist } = await supabase
+      .from('checklist_items')
+      .select('text')
+      .eq('task_id', recurringTask.id);
+
+    if (oldChecklist && oldChecklist.length > 0) {
+      await supabase.from('checklist_items').insert(
+        oldChecklist.map((item) => ({
+          task_id: newTask.id,
+          text: item.text,
+          completed: false,
+        }))
+      );
+    }
+  }
+}
+
+
+async function loadData() {
+  const today = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  await generateTodayRecurringTasks(today);
+
+  const { data: tasksData } = await supabase.from('tasks').select('*');
 
     const { data: respData } = await supabase
       .from('profiles')
@@ -55,11 +141,13 @@ export function ManagerDashboard() {
     setTasks(tasksData || []);
     setResponsibles(respData || []);
   }
-
- const today = new Date().toLocaleDateString('sv-SE', {
+const today = new Date().toLocaleDateString('sv-SE', {
   timeZone: 'America/Sao_Paulo',
 });
-  const todayTasks = tasks.filter((t) => t.date === today);
+
+const todayTasks = tasks.filter(
+  (t: any) => t.date === today && t.is_recurring !== true
+);
 
   const completedCount = todayTasks.filter((t) => t.status === 'completed').length;
   const pendingCount = todayTasks.filter((t) => t.status === 'pending').length;
