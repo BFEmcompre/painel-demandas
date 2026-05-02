@@ -55,16 +55,12 @@ async function generateTodayRecurringTasks(today: string) {
   if (!recurringTasks || recurringTasks.length === 0) return;
 
   for (const recurringTask of recurringTasks) {
-    const { data: existingTask } = await supabase
-      .from('tasks')
-      .select('id')
-      .eq('date', today)
-      .eq('title', recurringTask.title)
-      .eq('description', recurringTask.description)
-      .eq('recurring_deadline', recurringTask.recurring_deadline)
-      .eq('responsible_id', recurringTask.responsible_id)
-      .eq('is_recurring', false)
-      .maybeSingle();
+const { data: existingTask } = await supabase
+  .from('tasks')
+  .select('id')
+  .eq('date', today)
+  .eq('recurring_parent_id', recurringTask.id)
+  .maybeSingle();
 
     if (existingTask) continue;
 
@@ -81,16 +77,21 @@ async function generateTodayRecurringTasks(today: string) {
         date: today,
         deadline: deadlineFull,
         status: 'pending',
-        is_recurring: false,
-        recurring_deadline: recurringTask.recurring_deadline,
+is_recurring: false,
+recurring_deadline: recurringTask.recurring_deadline,
+recurring_parent_id: recurringTask.id,
       })
       .select()
       .single();
 
-    if (taskError || !newTask) {
-      console.error(taskError);
-      continue;
-    }
+if (taskError || !newTask) {
+  if (taskError?.code === '23505') {
+    continue;
+  }
+
+  console.error(taskError);
+  continue;
+}
 
     const { data: oldResponsibles } = await supabase
       .from('task_responsibles')

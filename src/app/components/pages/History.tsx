@@ -68,6 +68,10 @@ setIsAdmin(adminAccess);
 
 let tasksQuery = supabase.from('tasks').select('*');
 
+// Não mostrar o modelo original das demandas fixas.
+// Mostra apenas tarefas ocasionais e cópias diárias geradas.
+tasksQuery = tasksQuery.or('is_recurring.eq.false,is_recurring.is.null');
+
 if (!adminAccess) {
   tasksQuery = tasksQuery.eq('responsible_id', userId);
 }
