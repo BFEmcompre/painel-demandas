@@ -15,11 +15,6 @@ export function CreateManagerRequest() {
   const [dueAt, setDueAt] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
 
-  function localDateTimeToISOString(value: string) {
-  if (!value) return null;
-
-  return new Date(value).toISOString();
-}
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +50,7 @@ const { data: request, error } = await supabase
         message,
         requester_id: profile.id,
         requester_name: profile.name,
-        due_at: dueAtISO,
+        due_at: dueAt,
         status: 'open',
         urgent,
       })

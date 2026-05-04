@@ -150,6 +150,17 @@ function formatCreatedAtBR(value: string | null | undefined) {
   });
 }
 
+function formatDeadlineBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  const cleanValue = value.replace('T', ' ').replace('Z', '');
+  const [datePart, timePart = ''] = cleanValue.split(' ');
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00'] = timePart.split(':');
+
+  return `${day}/${month}/${year}, ${hour}:${minute}`;
+}
+
 
   return (
     <div className="space-y-6">
@@ -240,7 +251,7 @@ function formatCreatedAtBR(value: string | null | undefined) {
                     </p>
 
                     <p className="text-sm text-gray-500">
-                      Prazo:{' '}
+                      Prazo: {formatDeadlineBR(request.due_at)}
                       {new Date(request.due_at).toLocaleString('pt-BR', {
                         timeZone: 'America/Sao_Paulo',
                       })}
