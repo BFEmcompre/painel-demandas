@@ -81,9 +81,19 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-semibold text-gray-900">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
-        <p className="text-sm text-gray-500 mt-1">Sistema Diário</p>
-      </div>
+  <div className="flex items-center gap-3">
+    <img
+      src="/logo.png"
+      alt="Task Hub"
+      className="w-9 h-9 object-contain"
+    />
+
+    <div>
+      <h1 className="text-xl font-semibold text-gray-900">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
+      <p className="text-sm text-gray-500 mt-1">Sistema Diário</p>
+    </div>
+  </div>
+</div>
 
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
