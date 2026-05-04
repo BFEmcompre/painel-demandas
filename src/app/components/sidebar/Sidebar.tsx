@@ -85,7 +85,7 @@ export function Sidebar() {
     <img
       src="/logo.png"
       alt="Task Hub"
-      className="w-9 h-9 object-contain"
+      className="w-11 h-11 object-contain"
     />
 
     <div>

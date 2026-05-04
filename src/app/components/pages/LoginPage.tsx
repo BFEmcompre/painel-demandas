@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { CheckSquare } from 'lucide-react';
+
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -58,10 +58,13 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4">
-              <CheckSquare className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-semibold text-gray-900">Painel de Demandas</h1>
+<img
+  src="/logo.png"
+  alt="Task Hub"
+  className="w-24 h-24 object-contain mb-4"
+/>
+
+<h1 className="text-2xl font-semibold text-gray-900">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
             <p className="text-gray-500 mt-1">Entre com seu usuário</p>
           </div>
 
