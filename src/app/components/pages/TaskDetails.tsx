@@ -21,6 +21,7 @@ type Task = {
   completed_at: string | null;
   photo_url: string | null;
   observation: string | null;
+  recurring_parent_id?: string | null;
 };
 
 type ChecklistItem = {
@@ -204,6 +205,10 @@ const toggleChecklist = async (itemId: string, current: boolean) => {
 };
 
 const handleCompleteTask = async () => {
+if (isReadOnlyFixedDailyTask) {
+  toast.error('Essa tarefa fixa diária é de um dia anterior e está disponível apenas para consulta.');
+  return;
+}
   const hasAnyPhoto = savedPhotos.length > 0 || newPhotos.length > 0;
 
   if (!hasAnyPhoto) {
@@ -283,6 +288,18 @@ const { error } = await supabase
 
   const totalPhotos = savedPhotos.length + newPhotos.length;
 
+const todayBrazil = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
+
+const isFixedDailyTask = Boolean(task?.recurring_parent_id);
+const isPastTask = task ? task.date < todayBrazil : false;
+
+const isReadOnlyFixedDailyTask = isFixedDailyTask && isPastTask;
+
+const canInteractWithTask =
+  task?.status !== 'completed' && !isReadOnlyFixedDailyTask;
+
   return (
     <div className="max-w-3xl">
       <button
@@ -305,15 +322,28 @@ const { error } = await supabase
           })}
         </p>
 
-        {task.status === 'overdue' && (
-          <p className="text-sm text-red-600 mt-2">
-            Tarefa atrasada — ainda pode ser concluída.
-          </p>
-        )}
+{task.status === 'overdue' && !isReadOnlyFixedDailyTask && (
+  <p className="text-sm text-red-600 mt-2">
+    Tarefa atrasada — ainda pode ser concluída.
+  </p>
+)}
+
+{task.status === 'overdue' && isReadOnlyFixedDailyTask && (
+  <p className="text-sm text-red-600 mt-2">
+    Tarefa fixa diária atrasada — disponível apenas para consulta.
+  </p>
+)}
       </Card>
 
       <Card className="p-6 mb-6">
         <h2 className="font-semibold mb-3">Checklist</h2>
+
+{isReadOnlyFixedDailyTask && (
+  <div className="p-3 bg-gray-100 border rounded-lg text-sm text-gray-700">
+    Esta é uma tarefa fixa diária de um dia anterior. Ela está disponível apenas para consulta.
+  </div>
+)}
+
 
 {checklist.map((item) => {
   const itemLogs = logs.filter(
@@ -347,7 +377,7 @@ const { error } = await supabase
           <Checkbox
             checked={item.completed}
             onCheckedChange={() => toggleChecklist(item.id, item.completed)}
-            disabled={task.status === 'completed' || isUpdating}
+            disabled={!canInteractWithTask || isUpdating}
           />
         </div>
 
@@ -465,8 +495,8 @@ const { error } = await supabase
           </div>
         )}
 
-        {task.status !== 'completed' && (
-          <label className="block">
+{canInteractWithTask && (
+  <label className="block">
             <input
               type="file"
               accept="image/*"
@@ -492,15 +522,15 @@ const { error } = await supabase
 
       <Card className="p-6 mb-6">
         <Label>Observação</Label>
-        <Textarea
-          value={observation}
-          onChange={(e) => setObservation(e.target.value)}
-          disabled={task.status === 'completed'}
-        />
+<Textarea
+  value={observation}
+  onChange={(e) => setObservation(e.target.value)}
+  disabled={!canInteractWithTask}
+/>
       </Card>
 
-      {task.status !== 'completed' && (
-        <Button onClick={handleCompleteTask} className="bg-green-600 hover:bg-green-700">
+{canInteractWithTask && (
+  <Button onClick={handleCompleteTask} className="bg-green-600 hover:bg-green-700">
           <CheckCircle className="w-4 h-4 mr-2" />
           Concluir Tarefa
         </Button>

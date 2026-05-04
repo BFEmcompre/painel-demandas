@@ -26,6 +26,7 @@ type Task = {
   completed_at: string | null;
   status: 'pending' | 'completed' | 'overdue';
   photo_url: string | null;
+  recurring_parent_id?: string | null;
 };
 
 type Responsible = {
@@ -258,17 +259,13 @@ const matchesResponsible =
 <TableCell>{getStatusBadge(task.status)}</TableCell>
 
 <TableCell>
-  {task.photo_url ? (
-<button
-  type="button"
-  onClick={() => navigate(`/tarefa/${task.id}`)}
-  className="text-blue-600 text-sm hover:underline"
->
-  Ver fotos
-</button>
-  ) : (
-    '-'
-  )}
+  <button
+    type="button"
+    onClick={() => navigate(`/tarefa/${task.id}`)}
+    className="text-blue-600 text-sm hover:underline"
+  >
+    {task.photo_url ? 'Ver fotos' : 'Ver detalhes'}
+  </button>
 </TableCell>
                   </TableRow>
                 ))
