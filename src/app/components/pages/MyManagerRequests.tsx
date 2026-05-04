@@ -134,6 +134,23 @@ export function MyManagerRequests() {
     alert('Demanda finalizada com sucesso!');
   }
 
+function formatCreatedAtBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  const normalizedValue = value.endsWith('Z') ? value : `${value}Z`;
+
+  return new Date(normalizedValue).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -219,10 +236,7 @@ export function MyManagerRequests() {
                     </div>
 
                     <p className="text-sm text-gray-500">
-                      Criada em:{' '}
-                      {new Date(request.created_at).toLocaleString('pt-BR', {
-                        timeZone: 'America/Sao_Paulo',
-                      })}
+	    	      Criada em: {formatCreatedAtBR(request.created_at)}
                     </p>
 
                     <p className="text-sm text-gray-500">
