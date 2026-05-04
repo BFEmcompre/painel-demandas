@@ -36,12 +36,6 @@ export function CreateManagerRequest() {
 
 if (!profile) return;
 
-const dueAtISO = localDateTimeToISOString(dueAt);
-
-if (!dueAtISO) {
-  alert('Prazo inválido');
-  return;
-}
 
 const { data: request, error } = await supabase
       .from('manager_requests')
