@@ -131,10 +131,10 @@ function formatResponseDateBR(value: string | null | undefined) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
           Demandas Recebidas
         </h1>
-        <p className="text-gray-500 mt-1">
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Acompanhe demandas enviadas pelos responsáveis
         </p>
       </div>

@@ -202,8 +202,8 @@ function hasSentImage(platformId: string, sectionId: string) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Meus Indicadores</h1>
-        <p className="text-gray-500 mt-1">Envie os prints das plataformas do dia</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Meus Indicadores</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Envie os prints das plataformas do dia</p>
       </div>
 
       {platforms.length === 0 ? (

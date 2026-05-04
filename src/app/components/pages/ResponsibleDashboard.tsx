@@ -191,10 +191,10 @@ const { data: tasksData } = await supabase
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
           Olá, {user?.name}
         </h1>
-        <p className="text-gray-500 mt-1">
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Você tem {tasks.length} tarefa(s) para hoje
         </p>
       </div>

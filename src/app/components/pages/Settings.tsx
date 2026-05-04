@@ -108,8 +108,8 @@ export function Settings() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Configurações</h1>
-        <p className="text-gray-500 mt-1">Gerencie as preferências do sistema</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Configurações</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Gerencie as preferências do sistema</p>
       </div>
 
       <Card className="p-6">

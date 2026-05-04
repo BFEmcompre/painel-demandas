@@ -213,10 +213,10 @@ if (isFullscreen && currentSlide) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
             Apresentação de Indicadores
           </h1>
-<p className="text-gray-500 mt-1">
+<p className="text-gray-500 dark:text-gray-400 mt-1">
   {currentSlide.platform.name} — {currentSlide.section.name} — {currentSlide.platform.responsible_name}
 </p>
         </div>

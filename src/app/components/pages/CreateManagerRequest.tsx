@@ -99,8 +99,8 @@ const { data: request, error } = await supabase
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900">Enviar Demanda ao Gestor</h1>
-        <p className="text-gray-500 mt-1">Solicite uma resposta do gestor com prazo definido</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Enviar Demanda ao Gestor</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Solicite uma resposta do gestor com prazo definido</p>
       </div>
 
       <Card className="p-6">
