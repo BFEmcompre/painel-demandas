@@ -89,11 +89,16 @@ export function RootLayout() {
     await checkPendingIndicators(userId, profile?.role);
     await checkManagerRequests(userId, profile?.role);
 
+const today = new Date().toLocaleDateString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+});
+
 const { data: allPendingTasks } = await supabase
   .from('tasks')
-  .select('id, title, deadline, status, is_recurring, completed_at')
+  .select('id, title, deadline, status, is_recurring, completed_at, date')
   .in('status', ['pending', 'overdue'])
   .is('completed_at', null)
+  .eq('date', today)
   .or('is_recurring.eq.false,is_recurring.is.null');
 
     const overdueTasks =
