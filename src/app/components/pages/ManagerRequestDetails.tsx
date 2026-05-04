@@ -62,9 +62,7 @@ export function ManagerRequestDetails() {
       .from('manager_requests')
       .update({
         response_text: responseText,
-        responded_at: new Date().toLocaleString('sv-SE', {
-          timeZone: 'America/Sao_Paulo',
-        }),
+responded_at: new Date().toISOString(),
         status: 'answered',
       })
       .eq('id', id);
@@ -78,7 +76,24 @@ export function ManagerRequestDetails() {
     navigate('/demandas-gestor');
   }
 
+function formatDateTimeBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  return new Date(value).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+
   if (!request) return <p>Carregando...</p>;
+
+
+
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -94,7 +109,7 @@ export function ManagerRequestDetails() {
         </p>
 
         <p className="text-sm text-gray-500 mt-1">
-          Prazo: {new Date(request.due_at).toLocaleString('pt-BR')}
+          Prazo: {formatDateTimeBR(request.due_at)}
         </p>
 
         <div className="mt-5">
@@ -134,7 +149,7 @@ export function ManagerRequestDetails() {
 
         {request.status === 'answered' ? (
           <p className="text-green-600 text-sm font-medium mt-3">
-            Respondida em {request.responded_at ? new Date(request.responded_at).toLocaleString('pt-BR') : ''}
+            Respondida em {formatDateTimeBR(request.responded_at)}
           </p>
         ) : (
           <Button
