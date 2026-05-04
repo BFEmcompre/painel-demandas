@@ -316,7 +316,7 @@ function formatCreatedAtBR(value: string | null | undefined) {
                         >
                           {openUnresolvedId === request.id
                             ? 'Cancelar'
-                            : 'Marcar como não resolvida'}
+                            : 'Marcar com não resolvida'}
                         </Button>
                       )}
 
