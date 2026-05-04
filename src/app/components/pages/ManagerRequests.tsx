@@ -86,6 +86,48 @@ export function ManagerRequests() {
     return new Date(a.due_at).getTime() - new Date(b.due_at).getTime();
   });
 
+function formatCreatedAtBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  const normalizedValue = value.endsWith('Z') ? value : `${value}Z`;
+
+  return new Date(normalizedValue).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+function formatDeadlineBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  const cleanValue = value.replace('T', ' ').replace('Z', '');
+  const [datePart, timePart = ''] = cleanValue.split(' ');
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00'] = timePart.split(':');
+
+  return `${day}/${month}/${year}, ${hour}:${minute}`;
+}
+
+function formatResponseDateBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  return new Date(value).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -203,17 +245,11 @@ export function ManagerRequests() {
                     </p>
 
                     <p className="text-sm text-gray-500">
-                      Criada em:{' '}
-                      {new Date(request.created_at).toLocaleString('pt-BR', {
-                        timeZone: 'America/Sao_Paulo',
-                      })}
+Criada em: {formatCreatedAtBR(request.created_at)}
                     </p>
 
                     <p className="text-sm text-gray-500">
-                      Prazo:{' '}
-                      {new Date(request.due_at).toLocaleString('pt-BR', {
-                        timeZone: 'America/Sao_Paulo',
-                      })}
+Prazo: {formatDeadlineBR(request.due_at)}
                     </p>
                   </div>
                 </div>
@@ -240,10 +276,7 @@ export function ManagerRequests() {
 
                     {request.responded_at && (
                       <p className="text-xs text-gray-500 mt-3">
-                        Respondida em:{' '}
-                        {new Date(request.responded_at).toLocaleString('pt-BR', {
-                          timeZone: 'America/Sao_Paulo',
-                        })}
+Respondida em: {formatResponseDateBR(request.responded_at)}
                       </p>
                     )}
                   </div>

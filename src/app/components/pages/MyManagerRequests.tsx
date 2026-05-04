@@ -250,12 +250,9 @@ function formatDeadlineBR(value: string | null | undefined) {
 	    	      Criada em: {formatCreatedAtBR(request.created_at)}
                     </p>
 
-                    <p className="text-sm text-gray-500">
-                      Prazo: {formatDeadlineBR(request.due_at)}
-                      {new Date(request.due_at).toLocaleString('pt-BR', {
-                        timeZone: 'America/Sao_Paulo',
-                      })}
-                    </p>
+<p className="text-sm text-gray-500">
+  Prazo: {formatDeadlineBR(request.due_at)}
+</p>
                   </div>
                 </div>
 

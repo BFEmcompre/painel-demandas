@@ -90,6 +90,18 @@ function formatDateTimeBR(value: string | null | undefined) {
 }
 
 
+function formatDeadlineBR(value: string | null | undefined) {
+  if (!value) return '-';
+
+  const cleanValue = value.replace('T', ' ').replace('Z', '');
+  const [datePart, timePart = ''] = cleanValue.split(' ');
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00'] = timePart.split(':');
+
+  return `${day}/${month}/${year}, ${hour}:${minute}`;
+}
+
+
   if (!request) return <p>Carregando...</p>;
 
 
@@ -109,7 +121,7 @@ function formatDateTimeBR(value: string | null | undefined) {
         </p>
 
         <p className="text-sm text-gray-500 mt-1">
-          Prazo: {formatDateTimeBR(request.due_at)}
+          Prazo: {formatDeadlineBR(request.due_at)}
         </p>
 
         <div className="mt-5">
