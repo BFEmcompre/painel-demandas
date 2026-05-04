@@ -62,7 +62,9 @@ export function ManagerRequestDetails() {
       .from('manager_requests')
       .update({
         response_text: responseText,
-responded_at: new Date().toISOString(),
+responded_at: new Date().toLocaleString('sv-SE', {
+  timeZone: 'America/Sao_Paulo',
+}),
         status: 'answered',
       })
       .eq('id', id);
@@ -161,7 +163,7 @@ function formatDeadlineBR(value: string | null | undefined) {
 
         {request.status === 'answered' ? (
           <p className="text-green-600 text-sm font-medium mt-3">
-            Respondida em {formatDateTimeBR(request.responded_at)}
+            Respondida em {formatDeadlineBR(request.responded_at)}
           </p>
         ) : (
           <Button

@@ -18,6 +18,7 @@ export function RootLayout() {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
   const [currentUserId, setCurrentUserId] = useState('');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     let managerRequestsChannel: any = null;
@@ -43,6 +44,19 @@ export function RootLayout() {
       }
     };
   }, []);
+
+useEffect(() => {
+  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+  const initialTheme = savedTheme || 'light';
+
+  setTheme(initialTheme);
+
+  if (initialTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}, []);
 
   function isManagerRole(role?: string) {
     return ['manager', 'admin', 'gestor'].includes(
@@ -334,6 +348,19 @@ const { data: allPendingTasks } = await supabase
     setShowAlert(false);
   }
 
+function toggleTheme() {
+  const newTheme = theme === 'light' ? 'dark' : 'light';
+
+  setTheme(newTheme);
+  localStorage.setItem('theme', newTheme);
+
+  if (newTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -343,11 +370,11 @@ const { data: allPendingTasks } = await supabase
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header theme={theme} onToggleTheme={toggleTheme} />
 
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
