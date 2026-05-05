@@ -222,12 +222,12 @@ function formatDeadlineBR(value: string | null | undefined) {
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((request) => (
-            <Card key={request.id} className="p-6">
+            <Card key={request.id} className="p-6 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
               <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xl font-semibold text-gray-900">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                         {request.subject}
                       </h2>
 
@@ -246,36 +246,36 @@ function formatDeadlineBR(value: string | null | undefined) {
                       </span>
                     </div>
 
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
 	    	      Criada em: {formatCreatedAtBR(request.created_at)}
                     </p>
 
-<p className="text-sm text-gray-500">
+<p className="text-sm text-gray-500 dark:text-gray-400">
   Prazo: {formatDeadlineBR(request.due_at)}
 </p>
                   </div>
                 </div>
 
-                <div className="rounded-lg border bg-gray-50 p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Sua demanda
-                  </p>
-                  <p className="text-gray-800 whitespace-pre-wrap">
-                    {request.message}
-                  </p>
-                </div>
+<div className="rounded-lg border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
+  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+    Sua demanda
+  </p>
+  <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
+    {request.message}
+  </p>
+</div>
 
                 {request.response_text && (
-                  <div className="rounded-lg border bg-blue-50 p-4">
-                    <p className="text-sm font-medium text-blue-800 mb-2">
-                      Resposta do gestor
-                    </p>
-                    <p className="text-gray-800 whitespace-pre-wrap">
-                      {request.response_text}
-                    </p>
+<div className="rounded-lg border bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900 p-4">
+  <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
+    Resposta do gestor
+  </p>
+  <p className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
+    {request.response_text}
+  </p>
 
                     {request.responded_at && (
-                      <p className="text-xs text-gray-500 mt-3">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                         Respondida em:{' '}
                         {new Date(request.responded_at).toLocaleString('pt-BR', {
                           timeZone: 'America/Sao_Paulo',
@@ -286,15 +286,15 @@ function formatDeadlineBR(value: string | null | undefined) {
                 )}
 
                 {(request.status === 'answered' || request.status === 'unresolved') && (
-                  <div className="rounded-lg border bg-amber-50 p-4 space-y-3">
-                    <p className="text-sm font-medium text-amber-800">
+<div className="rounded-lg border bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900 p-4 space-y-3">
+  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
                       Se a resposta ainda não resolveu, você pode pedir continuidade
                       nesta mesma demanda.
                     </p>
 
                     {openUnresolvedId === request.id && (
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Novo prazo para resposta
                         </label>
 
@@ -356,11 +356,11 @@ function formatDeadlineBR(value: string | null | undefined) {
                 )}
 
                 {request.status === 'closed' && (
-                  <div className="rounded-lg border bg-green-50 p-4">
-                    <p className="text-sm font-medium text-green-700">
-                      Esta demanda foi finalizada e não gerará mais notificações.
-                    </p>
-                  </div>
+<div className="rounded-lg border bg-green-50 dark:bg-green-950/40 border-green-100 dark:border-green-900 p-4">
+  <p className="text-sm font-medium text-green-700 dark:text-green-300">
+    Esta demanda foi finalizada e não gerará mais notificações.
+  </p>
+</div>
                 )}
               </div>
             </Card>
