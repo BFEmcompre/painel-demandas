@@ -445,7 +445,7 @@ const canInteractWithTask =
   );
 })}
 
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2 text-sm text-blue-800">
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-lg flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
           <Clock className="w-4 h-4" />
           <span>
             {checklist.filter((c) => c.completed).length} de {checklist.length} itens concluídos
@@ -505,19 +505,23 @@ const canInteractWithTask =
               className="hidden"
             />
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer">
-              <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-600 font-medium">Clique para enviar uma ou mais fotos</p>
-              <p className="text-sm text-gray-500">PNG, JPG ou WEBP</p>
-            </div>
+<div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer">
+  <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
+  <p className="text-gray-600 dark:text-gray-200 font-medium">
+    Clique para enviar uma ou mais fotos
+  </p>
+  <p className="text-sm text-gray-500 dark:text-gray-400">
+    PNG, JPG ou WEBP
+  </p>
+</div>
           </label>
         )}
 
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800 font-medium">
-            É obrigatório enviar pelo menos uma foto para concluir.
-          </p>
-        </div>
+<div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-900 rounded-lg">
+  <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
+    É obrigatório enviar pelo menos uma foto para concluir.
+  </p>
+</div>
       </Card>
 
       <Card className="p-6 mb-6">
