@@ -10,6 +10,7 @@ import {
   LogOut,
   BarChart3,
   Presentation,
+  Repeat2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -19,9 +20,11 @@ const managerMenuItems = [
   { icon: CheckSquare, label: 'Demandas Recebidas', path: '/demandas-gestor' },
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Users, label: 'Responsáveis', path: '/responsaveis' },
+  { icon: Repeat2, label: 'Transferir Fixas', path: '/transferir-demandas-fixas' }, 
   { icon: BarChart3, label: 'Indicadores', path: '/indicadores' },
   { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
+  
 ];
 
 const responsibleMenuItems = [
@@ -30,8 +33,8 @@ const responsibleMenuItems = [
   { icon: CheckSquare, label: 'Retornos do Gestor', path: '/minhas-demandas-gestor' },
   { icon: BarChart3, label: 'Meus Indicadores', path: '/meus-indicadores' },
   { icon: History, label: 'Histórico', path: '/historico' },
-  { icon: Settings, label: 'Configurações', path: '/configuracoes' },
   { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
+  { icon: Settings, label: 'Configurações', path: '/configuracoes' },
 ];
 
 type Profile = {

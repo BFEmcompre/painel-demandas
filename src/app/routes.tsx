@@ -16,6 +16,7 @@ import { CreateManagerRequest } from "./components/pages/CreateManagerRequest";
 import { ManagerRequests } from "./components/pages/ManagerRequests";
 import { ManagerRequestDetails } from "./components/pages/ManagerRequestDetails";
 import { MyManagerRequests } from "./components/pages/MyManagerRequests";
+import { TransferRecurringTasks } from "./components/pages/TransferRecurringTasks";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "meus-indicadores", Component: MyIndicators },
       { path: "indicadores/apresentacao", Component: IndicatorsPresentation },
       { path: "minhas-demandas-gestor", Component: MyManagerRequests },
+      { path: "transferir-demandas-fixas", Component: TransferRecurringTasks },
     ],
   },
 ]);
