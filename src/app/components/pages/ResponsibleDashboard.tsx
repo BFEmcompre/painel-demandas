@@ -1,294 +1,205 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Card } from '../ui/card';
-import { Button } from '../ui/button';
-import { CheckCircle, Clock, AlertCircle, Image } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+<div className="space-y-6 min-h-screen bg-[#0B0B0B] text-white p-6">
 
-type Task = {
-  id: string;
-  title: string;
-  description: string;
-  responsible_id: string;
-  responsible_name: string;
-  deadline: string;
-  date: string;
-  status: 'pending' | 'completed' | 'overdue';
-  completed_at: string | null;
-  photo_url: string | null;
-};
+  <div>
+    <h1 className="text-3xl font-semibold text-white">
+      Olá, {user?.name}
+    </h1>
 
-export function ResponsibleDashboard() {
-  const navigate = useNavigate();
+    <p className="text-[#A1A1A1] mt-1">
+      Você tem {tasks.length} tarefa(s) para hoje
+    </p>
+  </div>
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [user, setUser] = useState<any>(null);
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-  useEffect(() => {
-    loadUserAndTasks();
-  }, []);
+    <Card className="
+      p-5
+      bg-[#121212]
+      border
+      border-[#1F1F1F]
+      shadow-lg
+      shadow-black/20
+    ">
+      <p className="text-sm text-[#A1A1A1]">
+        Pendentes
+      </p>
 
+      <p className="text-3xl font-semibold text-white mt-2">
+        {tasks.filter((t) => t.status === 'pending').length}
+      </p>
+    </Card>
 
-async function generateTodayRecurringTasks(today: string) {
-  const { data: recurringTasks } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('is_recurring', true)
-    .lte('date', today);
+    <Card className="
+      p-5
+      bg-[#121212]
+      border
+      border-[#1F1F1F]
+      shadow-lg
+      shadow-black/20
+    ">
+      <p className="text-sm text-[#A1A1A1]">
+        Concluídas
+      </p>
 
-  if (!recurringTasks || recurringTasks.length === 0) return;
+      <p className="text-3xl font-semibold text-white mt-2">
+        {tasks.filter((t) => t.status === 'completed').length}
+      </p>
+    </Card>
 
-  for (const recurringTask of recurringTasks) {
-const { data: existingTask } = await supabase
-  .from('tasks')
-  .select('id')
-  .eq('date', today)
-  .eq('recurring_parent_id', recurringTask.id)
-  .maybeSingle();
+    <Card className="
+      p-5
+      bg-[#121212]
+      border
+      border-[#1F1F1F]
+      shadow-lg
+      shadow-black/20
+    ">
+      <p className="text-sm text-[#A1A1A1]">
+        Atrasadas
+      </p>
 
-    if (existingTask) continue;
+      <p className="text-3xl font-semibold text-white mt-2">
+        {tasks.filter((t) => t.status === 'overdue').length}
+      </p>
+    </Card>
 
-    const deadlineTime = recurringTask.recurring_deadline || '17:00';
-    const deadlineFull = `${today}T${deadlineTime}`;
+  </div>
 
-    const { data: newTask, error: taskError } = await supabase
-      .from('tasks')
-      .insert({
-        title: recurringTask.title,
-        description: recurringTask.description,
-        responsible_id: recurringTask.responsible_id,
-        responsible_name: recurringTask.responsible_name,
-        date: today,
-        deadline: deadlineFull,
-        status: 'pending',
-is_recurring: false,
-recurring_deadline: recurringTask.recurring_deadline,
-recurring_parent_id: recurringTask.id,
-      })
-      .select()
-      .single();
-if (taskError || !newTask) {
-  if (taskError?.code === '23505') {
-    continue;
-  }
+  <div>
+    <h2 className="text-xl font-semibold mb-4 text-white">
+      Minhas Tarefas
+    </h2>
 
-  console.error(taskError);
-  continue;
-}
+    {tasks.length === 0 ? (
 
-    const { data: oldResponsibles } = await supabase
-      .from('task_responsibles')
-      .select('responsible_id, responsible_name')
-      .eq('task_id', recurringTask.id);
+      <Card className="
+        p-12
+        text-center
+        bg-[#121212]
+        border
+        border-[#1F1F1F]
+      ">
+        <CheckCircle className="w-12 h-12 mx-auto mb-3 text-[#22C55E]" />
 
-    if (oldResponsibles && oldResponsibles.length > 0) {
-      await supabase.from('task_responsibles').insert(
-        oldResponsibles.map((item) => ({
-          task_id: newTask.id,
-          responsible_id: item.responsible_id,
-          responsible_name: item.responsible_name,
-        }))
-      );
-    }
-
-    const { data: oldChecklist } = await supabase
-      .from('checklist_items')
-      .select('text')
-      .eq('task_id', recurringTask.id);
-
-    if (oldChecklist && oldChecklist.length > 0) {
-      await supabase.from('checklist_items').insert(
-        oldChecklist.map((item) => ({
-          task_id: newTask.id,
-          text: item.text,
-          completed: false,
-        }))
-      );
-    }
-  }
-}
-
-
-async function loadUserAndTasks() {
-  const { data: authData } = await supabase.auth.getUser();
-
-  if (!authData?.user) return;
-
-  const userId = authData.user.id;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-
-  setUser(profile);
-
-const today = new Date().toLocaleDateString('sv-SE', {
-  timeZone: 'America/Sao_Paulo',
-});
-
-await generateTodayRecurringTasks(today);
-
-  // 🔥 1. Buscar vínculos do usuário com tarefas
-  const { data: relations } = await supabase
-    .from('task_responsibles')
-    .select('task_id')
-    .eq('responsible_id', userId);
-
-  if (!relations || relations.length === 0) {
-    setTasks([]);
-    return;
-  }
-
-  const taskIds = relations.map((r) => r.task_id);
-
-  // 🔥 2. Buscar tarefas reais
-const { data: tasksData } = await supabase
-  .from('tasks')
-  .select('*')
-  .in('id', taskIds)
-  .eq('date', today)
-  .or('is_recurring.eq.false,is_recurring.is.null')
-  .order('deadline');
-
-  setTasks(tasksData || []);
-}
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'overdue':
-        return 'bg-red-100 text-red-700 border-red-200';
-      default:
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'overdue':
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
-      default:
-        return <Clock className="w-5 h-5 text-yellow-600" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Concluída';
-      case 'overdue':
-        return 'Atrasada';
-      default:
-        return 'Pendente';
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
-          Olá, {user?.name}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Você tem {tasks.length} tarefa(s) para hoje
+        <p className="text-[#A1A1A1]">
+          Nenhuma tarefa para hoje
         </p>
-      </div>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-5 border-l-4 border-l-yellow-500">
-          <p className="text-sm text-gray-600">Pendentes</p>
-          <p className="text-3xl font-semibold">
-            {tasks.filter((t) => t.status === 'pending').length}
-          </p>
-        </Card>
+    ) : (
 
-        <Card className="p-5 border-l-4 border-l-green-500">
-          <p className="text-sm text-gray-600">Concluídas</p>
-          <p className="text-3xl font-semibold">
-            {tasks.filter((t) => t.status === 'completed').length}
-          </p>
-        </Card>
+      tasks.map((task) => (
 
-        <Card className="p-5 border-l-4 border-l-red-500">
-          <p className="text-sm text-gray-600">Atrasadas</p>
-          <p className="text-3xl font-semibold">
-            {tasks.filter((t) => t.status === 'overdue').length}
-          </p>
-        </Card>
-      </div>
+        <Card
+          key={task.id}
+          className="
+            p-5
+            bg-[#121212]
+            border
+            border-[#1F1F1F]
+            hover:border-[#2A2A2A]
+            transition-all
+            duration-300
+            shadow-lg
+            shadow-black/20
+          "
+        >
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Minhas Tarefas</h2>
+          <div className="flex justify-between mb-3">
+            <div>
 
-        {tasks.length === 0 ? (
-          <Card className="p-12 text-center">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-            <p>Nenhuma tarefa para hoje</p>
-          </Card>
-        ) : (
-          tasks.map((task) => (
-            <Card key={task.id} className="p-5">
-              <div className="flex justify-between mb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(task.status)}
-                    <h3 className="font-semibold">{task.title}</h3>
-                    <span className={`px-2 py-1 text-xs rounded ${getStatusColor(task.status)}`}>
-                      {getStatusText(task.status)}
-                    </span>
-                  </div>
+              <div className="flex items-center gap-2">
 
-                  <p className="text-sm text-gray-600 mt-2">{task.description}</p>
+                {getStatusIcon(task.status)}
 
-                  <p className="text-sm text-gray-500 mt-2">
-                    Prazo:{' '}
-                    {new Date(task.deadline).toLocaleTimeString('pt-BR', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+                <h3 className="font-semibold text-white">
+                  {task.title}
+                </h3>
+
+                <span className={`
+                  px-2
+                  py-1
+                  text-xs
+                  rounded-lg
+                  border
+
+                  ${task.status === 'completed'
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                    : task.status === 'overdue'
+                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                    : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
+                  }
+                `}>
+                  {getStatusText(task.status)}
+                </span>
+
               </div>
 
-              <div className="flex gap-2 mt-3">
-                {task.status !== 'completed' && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/tarefa/${task.id}`)}
-                    >
-                      <Image className="w-4 h-4 mr-2" />
-                      Enviar Foto
-                    </Button>
+              <p className="text-sm text-[#A1A1A1] mt-2">
+                {task.description}
+              </p>
 
-                    <Button
-                      size="sm"
-                      onClick={() => navigate(`/tarefa/${task.id}`)}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Concluir
-                    </Button>
-                  </>
-                )}
+              <p className="text-sm text-[#707070] mt-2">
+                Prazo:{' '}
+                {new Date(task.deadline).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
 
-                {task.status === 'completed' && (
-                  <span className="text-green-600 text-sm">
-                    ✔ Concluída às{' '}
-                    {task.completed_at &&
-                      new Date(task.completed_at).toLocaleTimeString('pt-BR')}
-                  </span>
-                )}
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-3">
+
+            {task.status !== 'completed' && (
+              <>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/tarefa/${task.id}`)}
+                  className="
+                    bg-[#181818]
+                    border-[#2A2A2A]
+                    text-white
+                    hover:bg-[#242424]
+                    hover:border-[#3A3A3A]
+                  "
+                >
+                  <Image className="w-4 h-4 mr-2" />
+                  Enviar Foto
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/tarefa/${task.id}`)}
+                  className="
+                    bg-white
+                    text-black
+                    hover:bg-[#E5E5E5]
+                  "
+                >
+                  Concluir
+                </Button>
+
+              </>
+            )}
+
+            {task.status === 'completed' && (
+              <span className="text-green-400 text-sm">
+                ✔ Concluída às{' '}
+                {task.completed_at &&
+                  new Date(task.completed_at).toLocaleTimeString('pt-BR')}
+              </span>
+            )}
+
+          </div>
+
+        </Card>
+
+      ))
+
+    )}
+  </div>
+</div>
