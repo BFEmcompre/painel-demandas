@@ -81,8 +81,8 @@ export function Sidebar() {
   const menuItems = user?.role === 'manager' ? managerMenuItems : responsibleMenuItems;
 
   return (
-    <aside className="w-64 bg-[#0B0B0B] border-r border-[#1F1F1F] flex flex-col">
-      <div className="p-6 border-b border-[#1F1F1F]">
+    <aside className="w-64 bg-white dark:bg-[#0B0B0B] border-r border-gray-200 dark:border-[#1F1F1F] flex flex-col">
+      <div className="p-6 border-b border-gray-200 dark:border-[#1F1F1F]">
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
@@ -91,8 +91,13 @@ export function Sidebar() {
           />
 
           <div>
-            <h1 className="text-xl font-semibold text-white">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
-            <p className="text-sm text-[#A1A1A1] mt-1">Sistema Diário</p>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+              𝚃𝚊𝚜𝚔 𝙷𝚞𝚋
+            </h1>
+
+            <p className="text-sm text-gray-500 dark:text-[#A1A1A1] mt-1">
+              Sistema Diário
+            </p>
           </div>
         </div>
       </div>
@@ -109,8 +114,8 @@ export function Sidebar() {
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-[#181818] text-white border border-[#2A2A2A]'
-                      : 'text-[#A1A1A1] hover:bg-[#181818] hover:text-white'
+                      ? 'bg-gray-100 text-gray-900 border border-gray-200 dark:bg-[#181818] dark:text-white dark:border-[#2A2A2A]'
+                      : 'text-gray-700 hover:bg-gray-50 dark:text-[#A1A1A1] dark:hover:bg-[#181818] dark:hover:text-white'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -122,17 +127,20 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-[#1F1F1F]">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#121212] border border-[#1F1F1F]">
-          <div className="w-10 h-10 rounded-full bg-[#242424] flex items-center justify-center">
-            <span className="text-white font-semibold">
+      <div className="p-4 border-t border-gray-200 dark:border-[#1F1F1F]">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-[#121212] dark:border-[#1F1F1F]">
+          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-[#242424] flex items-center justify-center">
+            <span className="text-gray-900 dark:text-white font-semibold">
               {user?.name?.charAt(0).toUpperCase() || '?'}
             </span>
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{user?.name || 'Usuário'}</p>
-            <p className="text-sm text-[#A1A1A1] truncate">
+            <p className="font-medium text-gray-900 dark:text-white truncate">
+              {user?.name || 'Usuário'}
+            </p>
+
+            <p className="text-sm text-gray-500 dark:text-[#A1A1A1] truncate">
               {user?.role === 'manager' ? 'Gestor' : 'Responsável'}
             </p>
           </div>
@@ -140,7 +148,7 @@ export function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-lg text-[#A1A1A1] hover:bg-[#181818] hover:text-red-400 transition-colors"
+          className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 dark:text-[#A1A1A1] dark:hover:bg-[#181818] dark:hover:text-red-400 transition-colors"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Sair</span>
