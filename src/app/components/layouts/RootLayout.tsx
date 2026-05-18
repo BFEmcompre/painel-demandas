@@ -14,20 +14,33 @@ export function RootLayout() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+
   const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertTasks, setAlertTasks] = useState<AlertTask[]>([]);
-  const [currentUserId, setCurrentUserId] = useState('');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const [alertMessage, setAlertMessage] =
+    useState('');
+
+  const [alertTasks, setAlertTasks] = useState<
+    AlertTask[]
+  >([]);
+
+  const [currentUserId, setCurrentUserId] =
+    useState('');
+
+  const [theme, setTheme] = useState<
+    'light' | 'dark'
+  >('light');
 
   useEffect(() => {
     let managerRequestsChannel: any = null;
 
     requestNotificationPermission();
+
     checkUserAndOverdueTasks();
 
     async function setupRealtime() {
-      managerRequestsChannel = await subscribeManagerRequests();
+      managerRequestsChannel =
+        await subscribeManagerRequests();
     }
 
     setupRealtime();
@@ -40,23 +53,33 @@ export function RootLayout() {
       clearInterval(interval);
 
       if (managerRequestsChannel) {
-        supabase.removeChannel(managerRequestsChannel);
+        supabase.removeChannel(
+          managerRequestsChannel
+        );
       }
     };
   }, []);
 
-useEffect(() => {
-  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-  const initialTheme = savedTheme || 'light';
+  useEffect(() => {
+    const savedTheme = localStorage.getItem(
+      'theme'
+    ) as 'light' | 'dark' | null;
 
-  setTheme(initialTheme);
+    const initialTheme =
+      savedTheme || 'light';
 
-  if (initialTheme === 'dark') {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-}, []);
+    setTheme(initialTheme);
+
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add(
+        'dark'
+      );
+    } else {
+      document.documentElement.classList.remove(
+        'dark'
+      );
+    }
+  }, []);
 
   function isManagerRole(role?: string) {
     return ['manager', 'admin', 'gestor'].includes(
@@ -64,9 +87,14 @@ useEffect(() => {
     );
   }
 
-  function sendBrowserNotification(title: string, body: string) {
+  function sendBrowserNotification(
+    title: string,
+    body: string
+  ) {
     if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
+
+    if (Notification.permission !== 'granted')
+      return;
 
     new Notification(title, {
       body,
@@ -83,7 +111,8 @@ useEffect(() => {
   }
 
   async function checkUserAndOverdueTasks() {
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } =
+      await supabase.auth.getUser();
 
     if (!authData.user) {
       navigate('/login');
@@ -91,7 +120,9 @@ useEffect(() => {
     }
 
     const userId = authData.user.id;
+
     setCurrentUserId(userId);
+
     setLoading(false);
 
     const { data: profile } = await supabase
@@ -100,23 +131,41 @@ useEffect(() => {
       .eq('id', userId)
       .single();
 
-    await checkPendingIndicators(userId, profile?.role);
-    await checkManagerRequests(userId, profile?.role);
+    await checkPendingIndicators(
+      userId,
+      profile?.role
+    );
 
-const today = new Date().toLocaleDateString('sv-SE', {
-  timeZone: 'America/Sao_Paulo',
-});
+    await checkManagerRequests(
+      userId,
+      profile?.role
+    );
 
-const { data: allPendingTasks } = await supabase
-  .from('tasks')
-  .select('id, title, deadline, status, is_recurring, completed_at, date')
-  .in('status', ['pending', 'overdue'])
-  .is('completed_at', null)
-  .eq('date', today)
-  .or('is_recurring.eq.false,is_recurring.is.null');
+    const today = new Date().toLocaleDateString(
+      'sv-SE',
+      {
+        timeZone: 'America/Sao_Paulo',
+      }
+    );
+
+    const { data: allPendingTasks } =
+      await supabase
+        .from('tasks')
+        .select(
+          'id, title, deadline, status, is_recurring, completed_at, date'
+        )
+        .in('status', ['pending', 'overdue'])
+        .is('completed_at', null)
+        .eq('date', today)
+        .or(
+          'is_recurring.eq.false,is_recurring.is.null'
+        );
 
     const overdueTasks =
-  allPendingTasks?.filter((task) => new Date(task.deadline) < new Date()) || [];
+      allPendingTasks?.filter(
+        (task) =>
+          new Date(task.deadline) < new Date()
+      ) || [];
 
     if (overdueTasks.length === 0) {
       setShowAlert(false);
@@ -134,14 +183,21 @@ const { data: allPendingTasks } = await supabase
     let tasksToNotify = overdueTasks;
 
     if (!isManagerRole(profile?.role)) {
-      const { data: relations } = await supabase
-        .from('task_responsibles')
-        .select('task_id')
-        .eq('responsible_id', userId);
+      const { data: relations } =
+        await supabase
+          .from('task_responsibles')
+          .select('task_id')
+          .eq('responsible_id', userId);
 
-      const myTaskIds = relations?.map((item) => item.task_id) || [];
+      const myTaskIds =
+        relations?.map(
+          (item) => item.task_id
+        ) || [];
 
-      tasksToNotify = overdueTasks.filter((task) => myTaskIds.includes(task.id));
+      tasksToNotify = overdueTasks.filter(
+        (task) =>
+          myTaskIds.includes(task.id)
+      );
     }
 
     if (tasksToNotify.length === 0) {
@@ -149,16 +205,22 @@ const { data: allPendingTasks } = await supabase
       return;
     }
 
-    const { data: viewedAlerts } = await supabase
-      .from('task_alert_views')
-      .select('task_id')
-      .eq('user_id', userId);
+    const { data: viewedAlerts } =
+      await supabase
+        .from('task_alert_views')
+        .select('task_id')
+        .eq('user_id', userId);
 
-    const viewedTaskIds = viewedAlerts?.map((item) => item.task_id) || [];
+    const viewedTaskIds =
+      viewedAlerts?.map(
+        (item) => item.task_id
+      ) || [];
 
-    const notViewedTasks = tasksToNotify.filter(
-      (task) => !viewedTaskIds.includes(task.id)
-    );
+    const notViewedTasks =
+      tasksToNotify.filter(
+        (task) =>
+          !viewedTaskIds.includes(task.id)
+      );
 
     if (notViewedTasks.length === 0) {
       setShowAlert(false);
@@ -171,28 +233,41 @@ const { data: allPendingTasks } = await supabase
         : `${notViewedTasks.length} tarefas estão atrasadas.`;
 
     setAlertTasks(notViewedTasks);
+
     setAlertMessage(message);
+
     setShowAlert(true);
 
-    sendBrowserNotification('🚨 Tarefa atrasada', message);
+    sendBrowserNotification(
+      '🚨 Tarefa atrasada',
+      message
+    );
   }
 
-  async function checkManagerRequests(userId: string, role?: string) {
+  async function checkManagerRequests(
+    userId: string,
+    role?: string
+  ) {
     const now = new Date();
 
     const { data: requests } = await supabase
       .from('manager_requests')
       .select('*');
 
-    if (!requests || requests.length === 0) return;
+    if (!requests || requests.length === 0)
+      return;
 
     if (isManagerRole(role)) {
-      const openRequests = requests.filter((request) =>
-        ['open', 'unresolved'].includes(request.status)
+      const openRequests = requests.filter(
+        (request) =>
+          ['open', 'unresolved'].includes(
+            request.status
+          )
       );
 
       const overdue = openRequests.filter(
-        (request) => new Date(request.due_at) < now
+        (request) =>
+          new Date(request.due_at) < now
       );
 
       if (overdue.length > 0) {
@@ -202,11 +277,19 @@ const { data: allPendingTasks } = await supabase
         );
       }
 
-      const upcoming = openRequests.filter((request) => {
-        const diff = new Date(request.due_at).getTime() - now.getTime();
+      const upcoming = openRequests.filter(
+        (request) => {
+          const diff =
+            new Date(
+              request.due_at
+            ).getTime() - now.getTime();
 
-        return diff > 0 && diff <= 10 * 60 * 1000;
-      });
+          return (
+            diff > 0 &&
+            diff <= 10 * 60 * 1000
+          );
+        }
+      );
 
       if (upcoming.length > 0) {
         sendBrowserNotification(
@@ -227,17 +310,23 @@ const { data: allPendingTasks } = await supabase
 
     if (answered.length === 0) return;
 
-    const { data: viewedResponses } = await supabase
-      .from('manager_request_alert_views')
-      .select('request_id')
-      .eq('user_id', userId)
-      .eq('alert_type', 'response_viewed');
+    const { data: viewedResponses } =
+      await supabase
+        .from('manager_request_alert_views')
+        .select('request_id')
+        .eq('user_id', userId)
+        .eq('alert_type', 'response_viewed');
 
-    const viewedIds = viewedResponses?.map((item) => item.request_id) || [];
+    const viewedIds =
+      viewedResponses?.map(
+        (item) => item.request_id
+      ) || [];
 
-    const notViewedAnswered = answered.filter(
-      (request) => !viewedIds.includes(request.id)
-    );
+    const notViewedAnswered =
+      answered.filter(
+        (request) =>
+          !viewedIds.includes(request.id)
+      );
 
     if (notViewedAnswered.length > 0) {
       sendBrowserNotification(
@@ -248,7 +337,8 @@ const { data: allPendingTasks } = await supabase
   }
 
   async function subscribeManagerRequests() {
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData } =
+      await supabase.auth.getUser();
 
     if (!authData.user) return null;
 
@@ -258,10 +348,12 @@ const { data: allPendingTasks } = await supabase
       .eq('id', authData.user.id)
       .single();
 
-    if (!isManagerRole(profile?.role)) return null;
+    if (!isManagerRole(profile?.role))
+      return null;
 
     const channel = supabase
       .channel('manager-requests-realtime')
+
       .on(
         'postgres_changes',
         {
@@ -274,10 +366,13 @@ const { data: allPendingTasks } = await supabase
 
           sendBrowserNotification(
             '📩 Nova demanda recebida',
-            request.urgent ? `URGENTE: ${request.subject}` : request.subject
+            request.urgent
+              ? `URGENTE: ${request.subject}`
+              : request.subject
           );
         }
       )
+
       .on(
         'postgres_changes',
         {
@@ -288,44 +383,63 @@ const { data: allPendingTasks } = await supabase
         (payload) => {
           const request: any = payload.new;
 
-          if (request.status !== 'unresolved') return;
+          if (
+            request.status !== 'unresolved'
+          )
+            return;
 
           sendBrowserNotification(
             '🔁 Demanda marcada como não resolvida',
-            request.urgent ? `URGENTE: ${request.subject}` : request.subject
+            request.urgent
+              ? `URGENTE: ${request.subject}`
+              : request.subject
           );
         }
       )
+
       .subscribe();
 
     return channel;
   }
 
-  async function checkPendingIndicators(userId: string, role?: string) {
+  async function checkPendingIndicators(
+    userId: string,
+    role?: string
+  ) {
     if (!isManagerRole(role)) return;
 
-    const today = new Date().toLocaleDateString('sv-SE', {
-      timeZone: 'America/Sao_Paulo',
-    });
+    const today = new Date().toLocaleDateString(
+      'sv-SE',
+      {
+        timeZone: 'America/Sao_Paulo',
+      }
+    );
 
-    const { data: platforms } = await supabase
-      .from('platforms')
-      .select('*');
+    const { data: platforms } =
+      await supabase
+        .from('platforms')
+        .select('*');
 
-    const { data: images } = await supabase
-      .from('platform_indicator_images')
-      .select('*')
-      .eq('reference_date', today);
+    const { data: images } =
+      await supabase
+        .from('platform_indicator_images')
+        .select('*')
+        .eq('reference_date', today);
 
-    const pending = platforms?.filter((platform) => {
-      return !images?.some(
-        (image) =>
-          image.platform_id === platform.id &&
-          image.responsible_id === platform.responsible_id
-      );
-    });
+    const pending = platforms?.filter(
+      (platform) => {
+        return !images?.some(
+          (image) =>
+            image.platform_id ===
+              platform.id &&
+            image.responsible_id ===
+              platform.responsible_id
+        );
+      }
+    );
 
-    if (!pending || pending.length === 0) return;
+    if (!pending || pending.length === 0)
+      return;
 
     sendBrowserNotification(
       '📊 Indicadores pendentes',
@@ -334,7 +448,11 @@ const { data: allPendingTasks } = await supabase
   }
 
   async function markAlertAsViewed() {
-    if (!currentUserId || alertTasks.length === 0) return;
+    if (
+      !currentUserId ||
+      alertTasks.length === 0
+    )
+      return;
 
     const rows = alertTasks.map((task) => ({
       task_id: task.id,
@@ -343,50 +461,101 @@ const { data: allPendingTasks } = await supabase
 
     await supabase
       .from('task_alert_views')
-      .upsert(rows, { onConflict: 'task_id,user_id' });
+      .upsert(rows, {
+        onConflict: 'task_id,user_id',
+      });
 
     setShowAlert(false);
   }
 
-function toggleTheme() {
-  const newTheme = theme === 'light' ? 'dark' : 'light';
+  function toggleTheme() {
+    const newTheme =
+      theme === 'light'
+        ? 'dark'
+        : 'light';
 
-  setTheme(newTheme);
-  localStorage.setItem('theme', newTheme);
+    setTheme(newTheme);
 
-  if (newTheme === 'dark') {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
+    localStorage.setItem(
+      'theme',
+      newTheme
+    );
+
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add(
+        'dark'
+      );
+    } else {
+      document.documentElement.classList.remove(
+        'dark'
+      );
+    }
   }
-}
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="
+        flex
+        items-center
+        justify-center
+        h-screen
+        bg-white
+        dark:bg-[#0B0B0B]
+        text-gray-900
+        dark:text-white
+      ">
         Carregando...
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+    <div className="
+      flex
+      h-screen
+      bg-gray-50
+      dark:bg-[#0B0B0B]
+      text-gray-900
+      dark:text-white
+      transition-colors
+    ">
+
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header theme={theme} onToggleTheme={toggleTheme} />
+      <div className="
+        flex-1
+        flex
+        flex-col
+        overflow-hidden
+      ">
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <Header
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+
+        <main className="
+          flex-1
+          overflow-y-auto
+          p-6
+          bg-gray-50
+          dark:bg-[#0B0B0B]
+        ">
           <Outlet />
         </main>
+
       </div>
 
       {showAlert && (
         <AlertNotification
           message={alertMessage}
           type="overdue"
-          onClose={() => setShowAlert(false)}
-          onMarkAsViewed={markAlertAsViewed}
+          onClose={() =>
+            setShowAlert(false)
+          }
+          onMarkAsViewed={
+            markAlertAsViewed
+          }
         />
       )}
     </div>
