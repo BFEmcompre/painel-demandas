@@ -3,7 +3,13 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { supabase } from '../../lib/supabase';
 
 type Responsible = {
@@ -27,9 +33,9 @@ export function Platforms() {
   const [name, setName] = useState('');
   const [responsibleId, setResponsibleId] = useState('');
   const [displayOrder, setDisplayOrder] = useState('0');
-const [uploadDeadline, setUploadDeadline] = useState('09:00');
-const [uploadFilter, setUploadFilter] = useState('all');
-const [todayUploads, setTodayUploads] = useState<any[]>([]);
+  const [uploadDeadline, setUploadDeadline] = useState('09:00');
+  const [uploadFilter, setUploadFilter] = useState('all');
+  const [todayUploads, setTodayUploads] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -49,24 +55,25 @@ const [todayUploads, setTodayUploads] = useState<any[]>([]);
 
     setResponsibles(respData || []);
     setPlatforms(platformData || []);
-	
+
     const today = new Date().toLocaleDateString('sv-SE', {
-  timeZone: 'America/Sao_Paulo',
-});
+      timeZone: 'America/Sao_Paulo',
+    });
 
-const { data: uploadsData } = await supabase
-  .from('platform_indicator_images')
-  .select('platform_id, responsible_id')
-  .eq('reference_date', today);
+    const { data: uploadsData } = await supabase
+      .from('platform_indicator_images')
+      .select('platform_id, responsible_id')
+      .eq('reference_date', today);
 
-setTodayUploads(uploadsData || []);
-
+    setTodayUploads(uploadsData || []);
   }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
-    const responsible = responsibles.find((r) => r.id === responsibleId);
+    const responsible = responsibles.find(
+      (r) => r.id === responsibleId
+    );
 
     if (!name || !responsible) {
       alert('Preencha a plataforma e o responsável');
@@ -77,9 +84,9 @@ setTodayUploads(uploadsData || []);
       name,
       responsible_id: responsible.id,
       responsible_name: responsible.name,
-display_order: Number(displayOrder || 0),
-upload_deadline: uploadDeadline,
-active: true,
+      display_order: Number(displayOrder || 0),
+      upload_deadline: uploadDeadline,
+      active: true,
     });
 
     if (error) {
@@ -90,140 +97,317 @@ active: true,
     setName('');
     setResponsibleId('');
     setDisplayOrder('0');
+
     loadData();
   }
 
-function hasSentToday(platform: Platform) {
-  return todayUploads.some(
-    (upload) =>
-      upload.platform_id === platform.id &&
-      upload.responsible_id === platform.responsible_id
-  );
-}
+  function hasSentToday(platform: Platform) {
+    return todayUploads.some(
+      (upload) =>
+        upload.platform_id === platform.id &&
+        upload.responsible_id === platform.responsible_id
+    );
+  }
 
-const filteredPlatforms = platforms.filter((platform) => {
-  if (uploadFilter === 'sent') return hasSentToday(platform);
-  if (uploadFilter === 'pending') return !hasSentToday(platform);
-  return true;
-});
+  const filteredPlatforms = platforms.filter((platform) => {
+    if (uploadFilter === 'sent') return hasSentToday(platform);
+    if (uploadFilter === 'pending') return !hasSentToday(platform);
+    return true;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-white dark:bg-[#0B0B0B] text-gray-900 dark:text-white p-1">
+
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Indicadores</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Vincule plataformas a responsáveis</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
+          Indicadores
+        </h1>
+
+        <p className="text-gray-500 dark:text-[#A1A1A1] mt-1">
+          Vincule plataformas a responsáveis
+        </p>
       </div>
 
-      <Card className="p-6">
-        <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+      <Card className="
+        p-6
+        bg-white
+        dark:bg-[#121212]
+        border
+        border-gray-200
+        dark:border-[#1F1F1F]
+      ">
+
+        <form
+          onSubmit={handleCreate}
+          className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+        >
+
           <div className="space-y-2">
-            <Label>Plataforma</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+
+            <Label className="text-gray-900 dark:text-white">
+              Plataforma
+            </Label>
+
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="
+                bg-white
+                border-gray-300
+                text-gray-900
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+                dark:text-white
+              "
+            />
+
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável</Label>
-            <Select value={responsibleId} onValueChange={setResponsibleId}>
-              <SelectTrigger>
+
+            <Label className="text-gray-900 dark:text-white">
+              Responsável
+            </Label>
+
+            <Select
+              value={responsibleId}
+              onValueChange={setResponsibleId}
+            >
+
+              <SelectTrigger className="
+                bg-white
+                border-gray-300
+                text-gray-900
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+                dark:text-white
+              ">
                 <SelectValue placeholder="Selecionar" />
               </SelectTrigger>
-              <SelectContent>
+
+              <SelectContent className="
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+              ">
                 {responsibles.map((resp) => (
-                  <SelectItem key={resp.id} value={resp.id}>
+                  <SelectItem
+                    key={resp.id}
+                    value={resp.id}
+                  >
                     {resp.name}
                   </SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
+
           </div>
 
           <div className="space-y-2">
-            <Label>Ordem</Label>
+
+            <Label className="text-gray-900 dark:text-white">
+              Ordem
+            </Label>
+
             <Input
               type="number"
               value={displayOrder}
-              onChange={(e) => setDisplayOrder(e.target.value)}
+              onChange={(e) =>
+                setDisplayOrder(e.target.value)
+              }
+              className="
+                bg-white
+                border-gray-300
+                text-gray-900
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+                dark:text-white
+              "
             />
+
           </div>
-	<div className="space-y-2">
-  <Label>Enviar até</Label>
-  <Input
-    type="time"
-    value={uploadDeadline}
-    onChange={(e) => setUploadDeadline(e.target.value)}
-  />
-</div>
 
+          <div className="space-y-2">
 
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+            <Label className="text-gray-900 dark:text-white">
+              Enviar até
+            </Label>
+
+            <Input
+              type="time"
+              value={uploadDeadline}
+              onChange={(e) =>
+                setUploadDeadline(e.target.value)
+              }
+              className="
+                bg-white
+                border-gray-300
+                text-gray-900
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+                dark:text-white
+              "
+            />
+
+          </div>
+
+          <Button
+            type="submit"
+            className="
+              bg-gray-900
+              text-white
+              hover:bg-black
+              dark:bg-white
+              dark:text-black
+              dark:hover:bg-[#E5E5E5]
+            "
+          >
             Cadastrar
           </Button>
+
         </form>
       </Card>
 
-      <Card className="p-6">
-        <h2 className="font-semibold mb-4">Plataformas cadastradas</h2>
+      <Card className="
+        p-6
+        bg-white
+        dark:bg-[#121212]
+        border
+        border-gray-200
+        dark:border-[#1F1F1F]
+      ">
 
-        <div className="flex gap-2 mb-4">
-  <Button
-    type="button"
-    variant={uploadFilter === 'all' ? 'default' : 'outline'}
-    onClick={() => setUploadFilter('all')}
-  >
-    Todos
-  </Button>
+        <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">
+          Plataformas cadastradas
+        </h2>
 
-  <Button
-    type="button"
-    variant={uploadFilter === 'sent' ? 'default' : 'outline'}
-    onClick={() => setUploadFilter('sent')}
-  >
-    Enviados hoje
-  </Button>
+        <div className="flex gap-2 mb-4 flex-wrap">
 
-  <Button
-    type="button"
-    variant={uploadFilter === 'pending' ? 'default' : 'outline'}
-    onClick={() => setUploadFilter('pending')}
-  >
-    Não enviados
-  </Button>
-</div>
+          <Button
+            type="button"
+            variant={uploadFilter === 'all' ? 'default' : 'outline'}
+            onClick={() => setUploadFilter('all')}
+            className="
+              dark:border-[#2A2A2A]
+              dark:bg-[#181818]
+              dark:text-white
+              dark:hover:bg-[#242424]
+            "
+          >
+            Todos
+          </Button>
+
+          <Button
+            type="button"
+            variant={uploadFilter === 'sent' ? 'default' : 'outline'}
+            onClick={() => setUploadFilter('sent')}
+            className="
+              dark:border-[#2A2A2A]
+              dark:bg-[#181818]
+              dark:text-white
+              dark:hover:bg-[#242424]
+            "
+          >
+            Enviados hoje
+          </Button>
+
+          <Button
+            type="button"
+            variant={uploadFilter === 'pending' ? 'default' : 'outline'}
+            onClick={() => setUploadFilter('pending')}
+            className="
+              dark:border-[#2A2A2A]
+              dark:bg-[#181818]
+              dark:text-white
+              dark:hover:bg-[#242424]
+            "
+          >
+            Não enviados
+          </Button>
+
+        </div>
 
         <div className="space-y-3">
+
           {filteredPlatforms.map((platform) => (
-            <div key={platform.id} className="border rounded-lg p-4 flex justify-between">
-              <div key={platform.id} className="border p-4 rounded flex justify-between items-center">
-  <div>
-    <p className="font-medium">{platform.name}</p>
-    <p className="text-sm text-gray-500">
-      Responsável: {platform.responsible_name}
-    </p>
-      {hasSentToday(platform) ? (
-  <p className="text-green-600 text-sm font-medium">✔ Enviado hoje</p>
-) : (
-  <p className="text-red-600 text-sm font-medium">Pendente</p>
-)}
-  </div>
 
-  <Button
-    variant="outline"
-    onClick={async () => {
-      const newName = prompt('Novo nome', platform.name);
-      if (!newName) return;
+            <div
+              key={platform.id}
+              className="
+                border
+                border-gray-200
+                dark:border-[#1F1F1F]
+                rounded-lg
+                p-4
+                bg-white
+                dark:bg-[#181818]
+              "
+            >
 
-      await supabase
-        .from('platforms')
-        .update({ name: newName })
-        .eq('id', platform.id);
+              <div className="flex justify-between items-center gap-4">
 
-      loadData();
-    }}
-  >
-    Editar
-  </Button>
-</div>
-              <span className="text-sm text-gray-500">Ordem: {platform.display_order}</span>
+                <div>
+
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {platform.name}
+                  </p>
+
+                  <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                    Responsável: {platform.responsible_name}
+                  </p>
+
+                  <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                    Ordem: {platform.display_order}
+                  </p>
+
+                  <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                    Prazo: {platform.upload_deadline}
+                  </p>
+
+                  {hasSentToday(platform) ? (
+                    <p className="text-green-600 dark:text-green-400 text-sm font-medium mt-2">
+                      ✔ Enviado hoje
+                    </p>
+                  ) : (
+                    <p className="text-red-600 dark:text-red-400 text-sm font-medium mt-2">
+                      Pendente
+                    </p>
+                  )}
+
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    const newName = prompt(
+                      'Novo nome',
+                      platform.name
+                    );
+
+                    if (!newName) return;
+
+                    await supabase
+                      .from('platforms')
+                      .update({ name: newName })
+                      .eq('id', platform.id);
+
+                    loadData();
+                  }}
+                  className="
+                    bg-white
+                    border-gray-300
+                    text-gray-900
+                    hover:bg-gray-100
+                    dark:bg-[#181818]
+                    dark:border-[#2A2A2A]
+                    dark:text-white
+                    dark:hover:bg-[#242424]
+                  "
+                >
+                  Editar
+                </Button>
+
+              </div>
             </div>
           ))}
         </div>
