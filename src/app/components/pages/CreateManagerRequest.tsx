@@ -15,7 +15,6 @@ export function CreateManagerRequest() {
   const [dueAt, setDueAt] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
 
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -34,10 +33,9 @@ export function CreateManagerRequest() {
       .eq('id', authData.user.id)
       .single();
 
-if (!profile) return;
+    if (!profile) return;
 
-
-const { data: request, error } = await supabase
+    const { data: request, error } = await supabase
       .from('manager_requests')
       .insert({
         subject,
@@ -97,54 +95,86 @@ const { data: request, error } = await supabase
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6 min-h-screen bg-white dark:bg-[#0B0B0B] text-gray-900 dark:text-white p-1">
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Enviar Demanda ao Gestor</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Solicite uma resposta do gestor com prazo definido</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
+          Enviar Demanda ao Gestor
+        </h1>
+
+        <p className="text-gray-500 dark:text-[#A1A1A1] mt-1">
+          Solicite uma resposta do gestor com prazo definido
+        </p>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label>Assunto *</Label>
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+            <Label className="text-gray-900 dark:text-white">
+              Assunto *
+            </Label>
+
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Texto *</Label>
-            <Textarea value={message} onChange={(e) => setMessage(e.target.value)} />
+            <Label className="text-gray-900 dark:text-white">
+              Texto *
+            </Label>
+
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Prazo para resposta *</Label>
+            <Label className="text-gray-900 dark:text-white">
+              Prazo para resposta *
+            </Label>
+
             <Input
               type="datetime-local"
               value={dueAt}
               onChange={(e) => setDueAt(e.target.value)}
+              className="bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Anexo</Label>
+            <Label className="text-gray-900 dark:text-white">
+              Anexo
+            </Label>
+
             <Input
               type="file"
               multiple
               onChange={(e) => setFiles(e.target.files)}
+              className="bg-white border-gray-300 text-gray-900 file:text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white dark:file:text-white"
             />
           </div>
 
-	<label className="flex items-center gap-2">
-  <input
-    type="checkbox"
-    checked={urgent}
-    onChange={(e) => setUrgent(e.target.checked)}
-  />
-  <span className="text-sm font-medium text-red-600">
-    Marcar como urgente
-  </span>
-</label>	
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={urgent}
+              onChange={(e) => setUrgent(e.target.checked)}
+              className="accent-red-600"
+            />
 
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+            <span className="text-sm font-medium text-red-600 dark:text-red-400">
+              Marcar como urgente
+            </span>
+          </label>
+
+          <Button
+            type="submit"
+            className="bg-gray-900 text-white hover:bg-black dark:bg-white dark:text-black dark:hover:bg-[#E5E5E5]"
+          >
             Enviar demanda
           </Button>
         </form>

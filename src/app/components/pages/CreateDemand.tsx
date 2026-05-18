@@ -22,11 +22,12 @@ export function CreateDemand() {
   const [selectedResponsibles, setSelectedResponsibles] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
- const todayBrazil = new Date().toLocaleDateString('sv-SE', {
-  timeZone: 'America/Sao_Paulo',
-});
 
-const [date, setDate] = useState(todayBrazil);
+  const todayBrazil = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  const [date, setDate] = useState(todayBrazil);
   const [deadline, setDeadline] = useState('17:00');
   const [isRecurring, setIsRecurring] = useState(false);
   const [checklistItems, setChecklistItems] = useState<string[]>(['']);
@@ -80,8 +81,8 @@ const [date, setDate] = useState(todayBrazil);
       return;
     }
 
-const taskDate = isRecurring ? todayBrazil : date;
-const deadlineFull = `${taskDate}T${deadline}`;
+    const taskDate = isRecurring ? todayBrazil : date;
+    const deadlineFull = `${taskDate}T${deadline}`;
 
     const responsibleNames = responsibles
       .filter((r) => selectedResponsibles.includes(r.id))
@@ -151,87 +152,203 @@ const deadlineFull = `${taskDate}T${deadline}`;
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl min-h-screen bg-white dark:bg-[#0B0B0B] p-1">
+      
       <button
         onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="
+          flex
+          items-center
+          gap-2
+          text-gray-600
+          hover:text-gray-900
+          dark:text-[#A1A1A1]
+          dark:hover:text-white
+          mb-6
+          transition-colors
+        "
       >
         <ArrowLeft className="w-4 h-4" />
         Voltar
       </button>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Criar Nova Demanda</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Defina os detalhes da tarefa e os responsáveis</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
+          Criar Nova Demanda
+        </h1>
+
+        <p className="text-gray-500 dark:text-[#A1A1A1] mt-1">
+          Defina os detalhes da tarefa e os responsáveis
+        </p>
       </div>
 
-      <Card className="p-6">
+      <Card className="
+        p-6
+        bg-white
+        dark:bg-[#121212]
+        border
+        border-gray-200
+        dark:border-[#1F1F1F]
+      ">
+        
         <form onSubmit={handleSubmit} className="space-y-6">
+
           <div className="space-y-2">
-            <Label>Título da Demanda *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <Label className="text-gray-900 dark:text-white">
+              Título da Demanda *
+            </Label>
+
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              className="
+                bg-white
+                dark:bg-[#181818]
+                border-gray-300
+                dark:border-[#2A2A2A]
+                text-gray-900
+                dark:text-white
+              "
+            />
           </div>
 
           <div className="space-y-2">
-            <Label>Descrição *</Label>
+            <Label className="text-gray-900 dark:text-white">
+              Descrição *
+            </Label>
+
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
+              className="
+                bg-white
+                dark:bg-[#181818]
+                border-gray-300
+                dark:border-[#2A2A2A]
+                text-gray-900
+                dark:text-white
+              "
             />
           </div>
 
           <div className="space-y-3">
-            <Label>Responsáveis *</Label>
+            <Label className="text-gray-900 dark:text-white">
+              Responsáveis *
+            </Label>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {responsibles.map((resp) => (
                 <label
                   key={resp.id}
-                  className="flex items-center gap-3 border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    border
+                    border-gray-200
+                    dark:border-[#2A2A2A]
+                    rounded-lg
+                    p-3
+                    cursor-pointer
+                    hover:bg-gray-50
+                    dark:hover:bg-[#181818]
+                    transition-colors
+                  "
                 >
                   <Checkbox
                     checked={selectedResponsibles.includes(resp.id)}
                     onCheckedChange={() => toggleResponsible(resp.id)}
                   />
-                  <span className="font-medium text-gray-800">{resp.name}</span>
+
+                  <span className="font-medium text-gray-800 dark:text-white">
+                    {resp.name}
+                  </span>
                 </label>
               ))}
             </div>
 
             {responsibles.length === 0 && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-red-600 dark:text-red-400">
                 Nenhum responsável cadastrado ainda.
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <div className="
+            flex
+            items-center
+            gap-3
+            p-4
+            bg-blue-50
+            border
+            border-blue-100
+            dark:bg-[#181818]
+            dark:border-[#2A2A2A]
+            rounded-lg
+          ">
             <Checkbox
               checked={isRecurring}
               onCheckedChange={(checked) => setIsRecurring(Boolean(checked))}
             />
+
             <div>
-              <p className="font-medium text-gray-900">Demanda fixa diária</p>
-              <p className="text-sm text-gray-600">
+              <p className="font-medium text-gray-900 dark:text-white">
+                Demanda fixa diária
+              </p>
+
+              <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
                 Essa demanda deverá ser realizada todos os dias durante o expediente.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
             {!isRecurring && (
               <div className="space-y-2">
-                <Label>Data *</Label>
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <Label className="text-gray-900 dark:text-white">
+                  Data *
+                </Label>
+
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="
+                    bg-white
+                    dark:bg-[#181818]
+                    border-gray-300
+                    dark:border-[#2A2A2A]
+                    text-gray-900
+                    dark:text-white
+                  "
+                />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Horário Limite *</Label>
-              <Input type="time" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+              <Label className="text-gray-900 dark:text-white">
+                Horário Limite *
+              </Label>
+
+              <Input
+                type="time"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="
+                  bg-white
+                  dark:bg-[#181818]
+                  border-gray-300
+                  dark:border-[#2A2A2A]
+                  text-gray-900
+                  dark:text-white
+                "
+              />
+
               {isRecurring && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-[#707070]">
                   Para demandas fixas, o padrão recomendado é 17:00.
                 </p>
               )}
@@ -239,9 +356,28 @@ const deadlineFull = `${taskDate}T${deadline}`;
           </div>
 
           <div className="space-y-3">
+
             <div className="flex items-center justify-between">
-              <Label>Checklist</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addChecklistItem}>
+              <Label className="text-gray-900 dark:text-white">
+                Checklist
+              </Label>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addChecklistItem}
+                className="
+                  bg-white
+                  border-gray-300
+                  text-gray-900
+                  hover:bg-gray-100
+                  dark:bg-[#181818]
+                  dark:border-[#2A2A2A]
+                  dark:text-white
+                  dark:hover:bg-[#242424]
+                "
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Item
               </Button>
@@ -249,10 +385,19 @@ const deadlineFull = `${taskDate}T${deadline}`;
 
             {checklistItems.map((item, index) => (
               <div key={index} className="flex gap-2">
+
                 <Input
                   value={item}
                   onChange={(e) => updateChecklistItem(index, e.target.value)}
                   placeholder={`Item ${index + 1}`}
+                  className="
+                    bg-white
+                    dark:bg-[#181818]
+                    border-gray-300
+                    dark:border-[#2A2A2A]
+                    text-gray-900
+                    dark:text-white
+                  "
                 />
 
                 {checklistItems.length > 1 && (
@@ -261,6 +406,14 @@ const deadlineFull = `${taskDate}T${deadline}`;
                     variant="outline"
                     size="icon"
                     onClick={() => removeChecklistItem(index)}
+                    className="
+                      bg-white
+                      border-gray-300
+                      hover:bg-red-50
+                      dark:bg-[#181818]
+                      dark:border-[#2A2A2A]
+                      dark:hover:bg-[#242424]
+                    "
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </Button>
@@ -270,13 +423,39 @@ const deadlineFull = `${taskDate}T${deadline}`;
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+
+            <Button
+              type="submit"
+              className="
+                bg-gray-900
+                text-white
+                hover:bg-black
+                dark:bg-white
+                dark:text-black
+                dark:hover:bg-[#E5E5E5]
+              "
+            >
               Salvar Demanda
             </Button>
 
-            <Button type="button" variant="outline" onClick={() => navigate('/')}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/')}
+              className="
+                bg-white
+                border-gray-300
+                text-gray-900
+                hover:bg-gray-100
+                dark:bg-[#181818]
+                dark:border-[#2A2A2A]
+                dark:text-white
+                dark:hover:bg-[#242424]
+              "
+            >
               Cancelar
             </Button>
+
           </div>
         </form>
       </Card>
