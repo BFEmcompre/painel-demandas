@@ -11,6 +11,7 @@ type Platform = {
   responsible_name: string;
   display_order: number;
 };
+
 type Section = {
   id: string;
   platform_id: string;
@@ -26,11 +27,11 @@ type SentImage = {
 export function MyIndicators() {
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [sections, setSections] = useState<Record<string, Section[]>>({});
-const [newSectionName, setNewSectionName] = useState('');
-const [newSectionOrder, setNewSectionOrder] = useState('');
+  const [newSectionName, setNewSectionName] = useState('');
+  const [newSectionOrder, setNewSectionOrder] = useState('');
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
-const [sentImages, setSentImages] = useState<SentImage[]>([]);
+  const [sentImages, setSentImages] = useState<SentImage[]>([]);
 
   useEffect(() => {
     loadData();
@@ -67,229 +68,367 @@ const [sentImages, setSentImages] = useState<SentImage[]>([]);
 
     setPlatforms(data || []);
 
-const { data: sectionsData } = await supabase
-  .from('platform_indicator_sections')
-  .select('*')
-  .eq('responsible_id', profile.id)
-  .order('display_order');
+    const { data: sectionsData } = await supabase
+      .from('platform_indicator_sections')
+      .select('*')
+      .eq('responsible_id', profile.id)
+      .order('display_order');
 
-const grouped: Record<string, Section[]> = {};
+    const grouped: Record<string, Section[]> = {};
 
-sectionsData?.forEach((section) => {
-  if (!grouped[section.platform_id]) {
-    grouped[section.platform_id] = [];
-  }
-  grouped[section.platform_id].push(section);
-});
+    sectionsData?.forEach((section) => {
+      if (!grouped[section.platform_id]) {
+        grouped[section.platform_id] = [];
+      }
 
-setSections(grouped);
-const today = getToday();
+      grouped[section.platform_id].push(section);
+    });
 
-const { data: sentData, error: sentError } = await supabase
-  .from('platform_indicator_images')
-  .select('platform_id, section_id')
-  .eq('responsible_id', profile.id)
-  .eq('reference_date', today);
+    setSections(grouped);
 
-if (sentError) {
-  console.error(sentError);
-  return;
-}
+    const today = getToday();
 
-setSentImages(sentData || []);
-}
+    const { data: sentData, error: sentError } = await supabase
+      .from('platform_indicator_images')
+      .select('platform_id, section_id')
+      .eq('responsible_id', profile.id)
+      .eq('reference_date', today);
 
-async function handleUploadWithSection(
-  platform: Platform,
-  sectionId: string,
-  files: FileList | null
-) {
-  if (!files || files.length === 0) return;
-
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData?.user) return;
-
-  const uploads = [];
-
-  for (const file of Array.from(files)) {
-    const fileName = `${platform.id}/${sectionId}/${Date.now()}-${file.name}`;
-
-    const { error } = await supabase.storage
-      .from('platform-indicators')
-      .upload(fileName, file);
-
-    if (error) {
-      alert('Erro ao enviar');
+    if (sentError) {
+      console.error(sentError);
       return;
     }
 
-    const { data } = supabase.storage
-      .from('platform-indicators')
-      .getPublicUrl(fileName);
-
-uploads.push({
-  platform_id: platform.id,
-  responsible_id: authData.user.id,
-  responsible_name: userName,
-  section_id: sectionId,
-  image_url: data.publicUrl,
-  reference_date: new Date().toLocaleDateString('sv-SE', {
-    timeZone: 'America/Sao_Paulo',
-  }),
-});
+    setSentImages(sentData || []);
   }
 
-const { error: insertError } = await supabase
-  .from('platform_indicator_images')
-  .insert(uploads);
+  async function handleUploadWithSection(
+    platform: Platform,
+    sectionId: string,
+    files: FileList | null
+  ) {
+    if (!files || files.length === 0) return;
 
-if (insertError) {
-  alert(insertError.message || 'Erro ao salvar imagem');
-  return;
-}
+    const { data: authData } = await supabase.auth.getUser();
 
-alert('Enviado!');
-loadData();
-}
+    if (!authData?.user) return;
 
-async function handleCreateSection(platformId: string) {
-  if (!newSectionName) return;
+    const uploads = [];
 
-  const { data: authData } = await supabase.auth.getUser();
+    for (const file of Array.from(files)) {
+      const fileName = `${platform.id}/${sectionId}/${Date.now()}-${file.name}`;
 
-  if (!authData?.user) return;
+      const { error } = await supabase.storage
+        .from('platform-indicators')
+        .upload(fileName, file);
 
-  const { error } = await supabase
-    .from('platform_indicator_sections')
-    .insert({
-      platform_id: platformId,
-      responsible_id: authData.user.id,
-      name: newSectionName,
-      display_order: Number(newSectionOrder || 0),
-    });
+      if (error) {
+        alert('Erro ao enviar');
+        return;
+      }
 
-  if (!error) {
-    setNewSectionName('');
-    setNewSectionOrder('');
+      const { data } = supabase.storage
+        .from('platform-indicators')
+        .getPublicUrl(fileName);
+
+      uploads.push({
+        platform_id: platform.id,
+        responsible_id: authData.user.id,
+        responsible_name: userName,
+        section_id: sectionId,
+        image_url: data.publicUrl,
+        reference_date: new Date().toLocaleDateString('sv-SE', {
+          timeZone: 'America/Sao_Paulo',
+        }),
+      });
+    }
+
+    const { error: insertError } = await supabase
+      .from('platform_indicator_images')
+      .insert(uploads);
+
+    if (insertError) {
+      alert(insertError.message || 'Erro ao salvar imagem');
+      return;
+    }
+
+    alert('Enviado!');
     loadData();
   }
-}
 
-async function handleDeleteSection(sectionId: string) {
-  const confirmDelete = confirm('Deseja excluir esta categoria?');
+  async function handleCreateSection(platformId: string) {
+    if (!newSectionName) return;
 
-  if (!confirmDelete) return;
+    const { data: authData } = await supabase.auth.getUser();
 
-  const { error } = await supabase
-    .from('platform_indicator_sections')
-    .delete()
-    .eq('id', sectionId);
+    if (!authData?.user) return;
 
-  if (error) {
-    alert(error.message || 'Erro ao excluir categoria');
-    return;
+    const { error } = await supabase
+      .from('platform_indicator_sections')
+      .insert({
+        platform_id: platformId,
+        responsible_id: authData.user.id,
+        name: newSectionName,
+        display_order: Number(newSectionOrder || 0),
+      });
+
+    if (!error) {
+      setNewSectionName('');
+      setNewSectionOrder('');
+      loadData();
+    }
   }
 
-  loadData();
-}
+  async function handleDeleteSection(sectionId: string) {
+    const confirmDelete = confirm('Deseja excluir esta categoria?');
 
-function hasSentImage(platformId: string, sectionId: string) {
-  return sentImages.some(
-    (img) => img.platform_id === platformId && img.section_id === sectionId
-  );
-}
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from('platform_indicator_sections')
+      .delete()
+      .eq('id', sectionId);
+
+    if (error) {
+      alert(error.message || 'Erro ao excluir categoria');
+      return;
+    }
+
+    loadData();
+  }
+
+  function hasSentImage(platformId: string, sectionId: string) {
+    return sentImages.some(
+      (img) =>
+        img.platform_id === platformId &&
+        img.section_id === sectionId
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen bg-white dark:bg-[#0B0B0B] text-gray-900 dark:text-white p-1">
+
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Meus Indicadores</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Envie os prints das plataformas do dia</p>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
+          Meus Indicadores
+        </h1>
+
+        <p className="text-gray-500 dark:text-[#A1A1A1] mt-1">
+          Envie os prints das plataformas do dia
+        </p>
       </div>
 
       {platforms.length === 0 ? (
-        <Card className="p-10 text-center text-gray-500">
+
+        <Card className="
+          p-10
+          text-center
+          text-gray-500
+          dark:text-[#A1A1A1]
+          bg-white
+          dark:bg-[#121212]
+          border
+          border-gray-200
+          dark:border-[#1F1F1F]
+        ">
           Nenhuma plataforma vinculada a você.
         </Card>
+
       ) : (
-platforms.map((platform) => (
-  <Card key={platform.id} className="p-6 space-y-4">
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="font-semibold text-lg">{platform.name}</h2>
-      </div>
-    </div>
 
-    {/* Criar categoria */}
-    <div className="flex gap-2">
-<input
-  value={newSectionName}
-  onChange={(e) => setNewSectionName(e.target.value)}
-  placeholder="Nome da categoria"
-  className="border px-3 py-2 rounded w-full"
-/>
+        platforms.map((platform) => (
 
-<input
-  type="number"
-  value={newSectionOrder}
-  onChange={(e) => setNewSectionOrder(e.target.value)}
-  placeholder="Ordem da categoria"
-  className="border px-3 py-2 rounded w-24"
-/>
-      <Button onClick={() => handleCreateSection(platform.id)}>
-        Criar
-      </Button>
-    </div>
+          <Card
+            key={platform.id}
+            className="
+              p-6
+              space-y-4
+              bg-white
+              dark:bg-[#121212]
+              border
+              border-gray-200
+              dark:border-[#1F1F1F]
+            "
+          >
 
-    {/* Lista de categorias */}
-    {(sections[platform.id] || []).map((section) => (
-      <div
-  key={section.id}
-  className="flex justify-between items-center border rounded p-3"
->
-  <div>
-    <span className="font-medium">{section.display_order} - {section.name}</span>
-  </div>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="font-semibold text-lg text-gray-900 dark:text-white">
+                  {platform.name}
+                </h2>
+              </div>
+            </div>
 
-  <div className="flex items-center gap-2">
-{hasSentImage(platform.id, section.id) ? (
-  <span className="text-green-600 text-sm font-medium">
-    ✔ Enviado hoje
-  </span>
-) : null}
+            {/* Criar categoria */}
 
-  <label className="cursor-pointer">
-  <input
-    type="file"
-    accept="image/*"
-    className="hidden"
-    onChange={(e) =>
-      handleUploadWithSection(platform, section.id, e.target.files)
-    }
-  />
+            <div className="flex gap-2">
 
-<div
-  className={`px-3 py-1 rounded text-white ${
-    hasSentImage(platform.id, section.id)
-      ? 'bg-yellow-500'
-      : 'bg-blue-600'
-  }`}
->
-  {hasSentImage(platform.id, section.id) ? 'Substituir' : 'Upload'}
-</div>
-</label>
+              <input
+                value={newSectionName}
+                onChange={(e) => setNewSectionName(e.target.value)}
+                placeholder="Nome da categoria"
+                className="
+                  border
+                  border-gray-300
+                  dark:border-[#2A2A2A]
+                  bg-white
+                  dark:bg-[#181818]
+                  text-gray-900
+                  dark:text-white
+                  px-3
+                  py-2
+                  rounded
+                  w-full
+                "
+              />
 
-  <Button
-    type="button"
-    variant="outline"
-    onClick={() => handleDeleteSection(section.id)}
-  >
-    Excluir
-  </Button>
-        </div>
-      </div>
-        ))}
-  </Card>
-))
+              <input
+                type="number"
+                value={newSectionOrder}
+                onChange={(e) => setNewSectionOrder(e.target.value)}
+                placeholder="Ordem"
+                className="
+                  border
+                  border-gray-300
+                  dark:border-[#2A2A2A]
+                  bg-white
+                  dark:bg-[#181818]
+                  text-gray-900
+                  dark:text-white
+                  px-3
+                  py-2
+                  rounded
+                  w-24
+                "
+              />
+
+              <Button
+                onClick={() => handleCreateSection(platform.id)}
+                className="
+                  bg-gray-900
+                  text-white
+                  hover:bg-black
+                  dark:bg-white
+                  dark:text-black
+                  dark:hover:bg-[#E5E5E5]
+                "
+              >
+                Criar
+              </Button>
+
+            </div>
+
+            {/* Lista de categorias */}
+
+            {(sections[platform.id] || []).map((section) => (
+
+              <div
+                key={section.id}
+                className="
+                  flex
+                  justify-between
+                  items-center
+                  border
+                  border-gray-200
+                  dark:border-[#1F1F1F]
+                  rounded-lg
+                  p-3
+                  bg-white
+                  dark:bg-[#181818]
+                "
+              >
+
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {section.display_order} - {section.name}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+
+                  {hasSentImage(platform.id, section.id) ? (
+                    <span className="text-green-600 dark:text-green-400 text-sm font-medium">
+                      ✔ Enviado hoje
+                    </span>
+                  ) : null}
+
+                  <label className="cursor-pointer">
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleUploadWithSection(
+                          platform,
+                          section.id,
+                          e.target.files
+                        )
+                      }
+                    />
+
+                    <div
+                      className={`
+                        px-3
+                        py-2
+                        rounded-lg
+                        text-sm
+                        font-medium
+                        transition-colors
+
+                        ${
+                          hasSentImage(platform.id, section.id)
+                            ? `
+                              bg-yellow-500
+                              hover:bg-yellow-600
+                              text-white
+                            `
+                            : `
+                              bg-gray-900
+                              hover:bg-black
+                              text-white
+                              dark:bg-white
+                              dark:text-black
+                              dark:hover:bg-[#E5E5E5]
+                            `
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+
+                        {hasSentImage(platform.id, section.id)
+                          ? 'Substituir'
+                          : 'Upload'}
+                      </div>
+                    </div>
+
+                  </label>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleDeleteSection(section.id)}
+                    className="
+                      bg-white
+                      border-gray-300
+                      text-gray-900
+                      hover:bg-red-50
+                      hover:text-red-600
+                      dark:bg-[#181818]
+                      dark:border-[#2A2A2A]
+                      dark:text-white
+                      dark:hover:bg-[#242424]
+                    "
+                  >
+                    Excluir
+                  </Button>
+
+                </div>
+              </div>
+            ))}
+          </Card>
+        ))
       )}
     </div>
   );
