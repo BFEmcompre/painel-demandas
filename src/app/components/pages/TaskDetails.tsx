@@ -699,6 +699,107 @@ export function TaskDetails() {
 
         </div>
       </Card>
+               <Card className="p-6 mb-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
+        <h2 className="font-semibold mb-3 text-gray-900 dark:text-white">
+          Imagens para verificação
+        </h2>
+
+        {totalPhotos > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            {savedPhotos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photo.photo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="block border border-gray-200 dark:border-[#1F1F1F] rounded-lg overflow-hidden"
+              >
+                <img
+                  src={photo.photo_url}
+                  className="w-full h-32 object-cover"
+                  alt="Comprovação"
+                />
+              </a>
+            ))}
+
+            {newPhotos.map((photo, index) => (
+              <div
+                key={photo.preview}
+                className="relative border border-gray-200 dark:border-[#1F1F1F] rounded-lg overflow-hidden"
+              >
+                <img
+                  src={photo.preview}
+                  className="w-full h-32 object-cover"
+                  alt="Nova comprovação"
+                />
+
+                {task.status !== 'completed' && (
+                  <button
+                    type="button"
+                    onClick={() => removeNewPhoto(index)}
+                    className="absolute top-2 right-2 bg-white dark:bg-[#181818] rounded-full p-1 shadow"
+                  >
+                    <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {canInteractWithTask && (
+          <label className="block">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+
+            <div className="border-2 border-dashed border-gray-300 dark:border-[#2A2A2A] rounded-lg p-8 text-center hover:border-gray-400 dark:hover:border-[#3A3A3A] hover:bg-gray-50 dark:hover:bg-[#181818] transition-colors cursor-pointer">
+              <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400 dark:text-[#707070]" />
+
+              <p className="text-gray-600 dark:text-white font-medium">
+                Clique para enviar uma ou mais fotos
+              </p>
+
+              <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                PNG, JPG ou WEBP
+              </p>
+            </div>
+          </label>
+        )}
+
+        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg">
+          <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
+            É obrigatório enviar pelo menos uma foto para concluir.
+          </p>
+        </div>
+      </Card>
+
+      <Card className="p-6 mb-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
+        <Label className="text-gray-900 dark:text-white">
+          Observação
+        </Label>
+
+        <Textarea
+          value={observation}
+          onChange={(e) => setObservation(e.target.value)}
+          disabled={!canInteractWithTask}
+          className="mt-2 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+        />
+      </Card>
+
+      {canInteractWithTask && (
+        <Button
+          onClick={handleCompleteTask}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Concluir Tarefa
+        </Button>
+      )}
     </div>
   );
 }
