@@ -27,6 +27,7 @@ type Task = {
   photo_url: string | null;
   observation: string | null;
   recurring_parent_id?: string | null;
+  is_recurring?: boolean | null;
 };
 
 type ChecklistItem = {
@@ -54,6 +55,10 @@ export function TaskDetails() {
   const [savedPhotos, setSavedPhotos] = useState<TaskPhoto[]>([]);
   const [newPhotos, setNewPhotos] = useState<NewPhoto[]>([]);
   const [observation, setObservation] = useState('');
+  const [editingTask, setEditingTask] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDeadline, setEditDeadline] = useState('');
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
@@ -120,6 +125,10 @@ export function TaskDetails() {
     setChecklist(checklistData || []);
     setSavedPhotos(photosData || []);
     setObservation(taskData?.observation || '');
+    setEditTitle(taskData?.title || '');
+    setEditDescription(taskData?.description || '');
+    setEditDeadline(taskData?.deadline?.split('T')[1]?.slice(0, 5) || '');
+
   }
 
   if (!task) {
@@ -372,6 +381,120 @@ export function TaskDetails() {
     task?.status !== 'completed' &&
     !isReadOnlyFixedDailyTask;
 
+  async function handleUpdateTask() {
+    if (!task) return;
+
+    if (!editTitle || !editDescription || !editDeadline) {
+      toast.error('Preencha título, descrição e horário limite');
+      return;
+    }
+
+    const deadlineFull = `${task.date}T${editDeadline}`;
+
+    const updateData: any = {
+      title: editTitle,
+      description: editDescription,
+      deadline: deadlineFull,
+    };
+
+    if (task.is_recurring) {
+      updateData.recurring_deadline = editDeadline;
+    }
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(updateData)
+      .eq('id', task.id);
+
+    if (error) {
+      toast.error(error.message || 'Erro ao editar demanda');
+      return;
+    }
+
+    toast.success('Demanda atualizada com sucesso!');
+    setEditingTask(false);
+    await loadTask();
+  }
+
+  async function deleteTaskRelations(taskIds: string[]) {
+    if (taskIds.length === 0) return;
+
+    await supabase.from('checklist_item_logs').delete().in('task_id', taskIds);
+    await supabase.from('checklist_items').delete().in('task_id', taskIds);
+    await supabase.from('task_photos').delete().in('task_id', taskIds);
+    await supabase.from('task_alert_views').delete().in('task_id', taskIds);
+    await supabase.from('task_responsibles').delete().in('task_id', taskIds);
+  }
+
+  async function handleDeleteTask() {
+    if (!task) return;
+
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir a demanda "${task.title}"?\n\nEssa ação não pode ser desfeita.`
+    );
+
+    if (!confirmDelete) return;
+
+    await deleteTaskRelations([task.id]);
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', task.id);
+
+    if (error) {
+      toast.error(error.message || 'Erro ao excluir demanda');
+      return;
+    }
+
+    toast.success('Demanda excluída com sucesso!');
+    navigate('/');
+  }
+
+  async function handleDeleteRecurringTask() {
+    if (!task) return;
+
+    const recurringId = task.recurring_parent_id || task.id;
+
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir esta demanda fixa inteira?\n\nIsso apagará o modelo fixo e todas as repetições já geradas dessa demanda.`
+    );
+
+    if (!confirmDelete) return;
+
+    const { data: relatedTasks, error: relatedError } = await supabase
+      .from('tasks')
+      .select('id')
+      .or(`id.eq.${recurringId},recurring_parent_id.eq.${recurringId}`);
+
+    if (relatedError) {
+      toast.error(relatedError.message || 'Erro ao buscar demandas relacionadas');
+      return;
+    }
+
+    const taskIds = relatedTasks?.map((item) => item.id) || [];
+
+    if (taskIds.length === 0) {
+      toast.error('Nenhuma demanda encontrada para excluir');
+      return;
+    }
+
+    await deleteTaskRelations(taskIds);
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .in('id', taskIds);
+
+    if (error) {
+      toast.error(error.message || 'Erro ao excluir demanda fixa');
+      return;
+    }
+
+    toast.success('Demanda fixa excluída com sucesso!');
+    navigate('/');
+  }
+
   return (
     <div className="max-w-3xl min-h-screen bg-white dark:bg-[#0B0B0B] text-gray-900 dark:text-white p-1">
 
@@ -436,6 +559,95 @@ export function TaskDetails() {
             </p>
           )}
       </Card>
+
+      {isAdmin && (
+        <Card className="p-6 mb-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="font-semibold text-gray-900 dark:text-white">
+              Ações do gestor
+            </h2>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditingTask((current) => !current)}
+            >
+              {editingTask ? 'Cancelar edição' : 'Editar demanda'}
+            </Button>
+          </div>
+
+          {editingTask && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-gray-900 dark:text-white">
+                  Título
+                </Label>
+
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full border rounded px-3 py-2 mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-900 dark:text-white">
+                  Descrição
+                </Label>
+
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-900 dark:text-white">
+                  Horário limite
+                </Label>
+
+                <input
+                  type="time"
+                  value={editDeadline}
+                  onChange={(e) => setEditDeadline(e.target.value)}
+                  className="w-full border rounded px-3 py-2 mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleUpdateTask}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Salvar alterações
+              </Button>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-200 dark:border-[#1F1F1F]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDeleteTask}
+              className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30"
+            >
+              Excluir esta demanda
+            </Button>
+
+            {(task.is_recurring || task.recurring_parent_id) && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDeleteRecurringTask}
+                className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30"
+              >
+                Excluir demanda fixa inteira
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
 
       <Card className="
         p-6
