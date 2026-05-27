@@ -86,13 +86,13 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
-            alt="Task Hub"
-            className="w-11 h-11 object-contain"
+            alt="𝙁𝙇𝙊𝙒"
+            className="w-14 h-14 rounded-lg"
           />
 
           <div>
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              𝚃𝚊𝚜𝚔 𝙷𝚞𝚋
+              𝙁𝙇𝙊𝙒
             </h1>
 
             <p className="text-sm text-gray-500 dark:text-[#A1A1A1] mt-1">

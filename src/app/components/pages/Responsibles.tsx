@@ -38,9 +38,10 @@ export function Responsibles() {
       return;
     }
 
-    const { data: tasks, error: tasksError } = await supabase
-      .from('tasks')
-      .select('responsible_id, status');
+const { data: tasks, error: tasksError } = await supabase
+  .from('tasks')
+  .select('responsible_id, status, is_recurring')
+  .or('is_recurring.eq.false,is_recurring.is.null');
 
     if (tasksError) {
       alert('Erro ao carregar tarefas dos responsáveis');

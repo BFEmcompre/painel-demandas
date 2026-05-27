@@ -115,6 +115,48 @@ export function Platforms() {
     return true;
   });
 
+async function handleDeletePlatform(platformId: string) {
+  const confirmDelete = window.confirm(
+    'Tem certeza que deseja excluir este indicador definitivamente?\n\nIsso também removerá imagens e categorias vinculadas.'
+  );
+
+  if (!confirmDelete) return;
+
+  const { error: imagesError } = await supabase
+    .from('platform_indicator_images')
+    .delete()
+    .eq('platform_id', platformId);
+
+  if (imagesError) {
+    alert(imagesError.message || 'Erro ao excluir imagens');
+    return;
+  }
+
+  const { error: sectionsError } = await supabase
+    .from('platform_indicator_sections')
+    .delete()
+    .eq('platform_id', platformId);
+
+  if (sectionsError) {
+    alert(sectionsError.message || 'Erro ao excluir categorias');
+    return;
+  }
+
+  const { error: platformError } = await supabase
+    .from('platforms')
+    .delete()
+    .eq('id', platformId);
+
+  if (platformError) {
+    alert(platformError.message || 'Erro ao excluir indicador');
+    return;
+  }
+
+  alert('Indicador excluído definitivamente!');
+  loadData();
+}
+
+
   return (
     <div className="space-y-6 min-h-screen bg-white dark:bg-[#0B0B0B] text-gray-900 dark:text-white p-1">
 
@@ -376,37 +418,87 @@ export function Platforms() {
 
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    const newName = prompt(
-                      'Novo nome',
-                      platform.name
-                    );
+<div className="flex gap-2">
 
-                    if (!newName) return;
+  <Button
+    variant="outline"
+    onClick={async () => {
 
-                    await supabase
-                      .from('platforms')
-                      .update({ name: newName })
-                      .eq('id', platform.id);
+      const newName = prompt(
+        'Novo nome da plataforma',
+        platform.name
+      );
 
-                    loadData();
-                  }}
-                  className="
-                    bg-white
-                    border-gray-300
-                    text-gray-900
-                    hover:bg-gray-100
-                    dark:bg-[#181818]
-                    dark:border-[#2A2A2A]
-                    dark:text-white
-                    dark:hover:bg-[#242424]
-                  "
-                >
-                  Editar
-                </Button>
+      if (!newName) return;
 
+      const newResponsible = prompt(
+        'Novo ID do responsável',
+        platform.responsible_id
+      );
+
+      if (!newResponsible) return;
+
+      const newOrder = prompt(
+        'Nova ordem',
+        String(platform.display_order)
+      );
+
+      if (!newOrder) return;
+
+      const newDeadline = prompt(
+        'Novo prazo',
+        platform.upload_deadline
+      );
+
+      if (!newDeadline) return;
+
+      const responsible = responsibles.find(
+        (r) => r.id === newResponsible
+      );
+
+      await supabase
+        .from('platforms')
+        .update({
+          name: newName,
+          responsible_id: newResponsible,
+          responsible_name: responsible?.name || '',
+          display_order: Number(newOrder),
+          upload_deadline: newDeadline,
+        })
+        .eq('id', platform.id);
+
+      loadData();
+    }}
+    className="
+      bg-white
+      border-gray-300
+      text-gray-900
+      hover:bg-gray-100
+      dark:bg-[#181818]
+      dark:border-[#2A2A2A]
+      dark:text-white
+      dark:hover:bg-[#242424]
+    "
+  >
+    Editar
+  </Button>
+
+  <Button
+    variant="outline"
+    onClick={() => handleDeletePlatform(platform.id)}
+    className="
+      border-red-300
+      text-red-600
+      hover:bg-red-50
+      dark:border-red-900
+      dark:text-red-400
+      dark:hover:bg-red-950
+    "
+  >
+    Excluir
+  </Button>
+
+</div>
               </div>
             </div>
           ))}
