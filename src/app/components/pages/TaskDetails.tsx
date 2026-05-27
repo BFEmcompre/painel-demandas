@@ -59,6 +59,8 @@ export function TaskDetails() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDeadline, setEditDeadline] = useState('');
+  const [editChecklist, setEditChecklist] = useState<ChecklistItem[]>([]);
+  const [newChecklistText, setNewChecklistText] = useState('');
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
@@ -123,6 +125,7 @@ export function TaskDetails() {
 
     setTask(taskData);
     setChecklist(checklistData || []);
+    setEditChecklist(checklistData || []);
     setSavedPhotos(photosData || []);
     setObservation(taskData?.observation || '');
     setEditTitle(taskData?.title || '');
@@ -381,8 +384,83 @@ export function TaskDetails() {
     task?.status !== 'completed' &&
     !isReadOnlyFixedDailyTask;
 
+  function updateEditChecklistText(itemId: string, value: string) {
+    setEditChecklist((current) =>
+      current.map((item) =>
+        item.id === itemId ? { ...item, text: value } : item
+      )
+    );
+  }
+
+  async function handleAddChecklistItem() {
+    if (!task) return;
+
+    if (!newChecklistText.trim()) {
+      toast.error('Digite o texto do novo item');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('checklist_items')
+      .insert({
+        task_id: task.id,
+        text: newChecklistText.trim(),
+        completed: false,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      toast.error(error?.message || 'Erro ao adicionar item');
+      return;
+    }
+
+    setEditChecklist((current) => [...current, data]);
+    setChecklist((current) => [...current, data]);
+    setNewChecklistText('');
+    toast.success('Item adicionado');
+  }
+
+  async function handleDeleteChecklistItem(itemId: string) {
+    const confirmDelete = window.confirm(
+      'Excluir este item do checklist?'
+    );
+
+    if (!confirmDelete) return;
+
+    await supabase
+      .from('checklist_item_logs')
+      .delete()
+      .eq('checklist_item_id', itemId);
+
+    const { error } = await supabase
+      .from('checklist_items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      toast.error(error.message || 'Erro ao excluir item');
+      return;
+    }
+
+    setEditChecklist((current) =>
+      current.filter((item) => item.id !== itemId)
+    );
+
+    setChecklist((current) =>
+      current.filter((item) => item.id !== itemId)
+    );
+
+    toast.success('Item excluído');
+  }
+
   async function handleUpdateTask() {
     if (!task) return;
+
+    if (task.status === 'completed') {
+      toast.error('Não é possível editar uma tarefa já concluída.');
+      return;
+    }
 
     if (!editTitle || !editDescription || !editDeadline) {
       toast.error('Preencha título, descrição e horário limite');
@@ -401,14 +479,33 @@ export function TaskDetails() {
       updateData.recurring_deadline = editDeadline;
     }
 
-    const { error } = await supabase
+    const { error: taskError } = await supabase
       .from('tasks')
       .update(updateData)
       .eq('id', task.id);
 
-    if (error) {
-      toast.error(error.message || 'Erro ao editar demanda');
+    if (taskError) {
+      toast.error(taskError.message || 'Erro ao editar demanda');
       return;
+    }
+
+    for (const item of editChecklist) {
+      if (!item.text.trim()) {
+        toast.error('Nenhum item do checklist pode ficar vazio');
+        return;
+      }
+
+      const { error: itemError } = await supabase
+        .from('checklist_items')
+        .update({
+          text: item.text.trim(),
+        })
+        .eq('id', item.id);
+
+      if (itemError) {
+        toast.error(itemError.message || 'Erro ao editar checklist');
+        return;
+      }
     }
 
     toast.success('Demanda atualizada com sucesso!');
@@ -426,53 +523,36 @@ export function TaskDetails() {
     await supabase.from('task_responsibles').delete().in('task_id', taskIds);
   }
 
-  async function handleDeleteTask() {
+  async function handleDeleteEverything() {
     if (!task) return;
 
-    const confirmDelete = window.confirm(
-      `Tem certeza que deseja excluir a demanda "${task.title}"?\n\nEssa ação não pode ser desfeita.`
-    );
+    const isFixedTask = Boolean(task.is_recurring || task.recurring_parent_id);
+
+    const confirmMessage = isFixedTask
+      ? `Tem certeza que deseja excluir completamente a demanda fixa "${task.title}"?\n\nIsso apagará o modelo fixo e todas as repetições já geradas dela.`
+      : `Tem certeza que deseja excluir completamente a demanda "${task.title}"?\n\nEssa ação não pode ser desfeita.`;
+
+    const confirmDelete = window.confirm(confirmMessage);
 
     if (!confirmDelete) return;
 
-    await deleteTaskRelations([task.id]);
+    let taskIds: string[] = [task.id];
 
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', task.id);
+    if (isFixedTask) {
+      const recurringId = task.recurring_parent_id || task.id;
 
-    if (error) {
-      toast.error(error.message || 'Erro ao excluir demanda');
-      return;
+      const { data: relatedTasks, error: relatedError } = await supabase
+        .from('tasks')
+        .select('id')
+        .or(`id.eq.${recurringId},recurring_parent_id.eq.${recurringId}`);
+
+      if (relatedError) {
+        toast.error(relatedError.message || 'Erro ao buscar demandas relacionadas');
+        return;
+      }
+
+      taskIds = relatedTasks?.map((item) => item.id) || [];
     }
-
-    toast.success('Demanda excluída com sucesso!');
-    navigate('/');
-  }
-
-  async function handleDeleteRecurringTask() {
-    if (!task) return;
-
-    const recurringId = task.recurring_parent_id || task.id;
-
-    const confirmDelete = window.confirm(
-      `Tem certeza que deseja excluir esta demanda fixa inteira?\n\nIsso apagará o modelo fixo e todas as repetições já geradas dessa demanda.`
-    );
-
-    if (!confirmDelete) return;
-
-    const { data: relatedTasks, error: relatedError } = await supabase
-      .from('tasks')
-      .select('id')
-      .or(`id.eq.${recurringId},recurring_parent_id.eq.${recurringId}`);
-
-    if (relatedError) {
-      toast.error(relatedError.message || 'Erro ao buscar demandas relacionadas');
-      return;
-    }
-
-    const taskIds = relatedTasks?.map((item) => item.id) || [];
 
     if (taskIds.length === 0) {
       toast.error('Nenhuma demanda encontrada para excluir');
@@ -487,11 +567,11 @@ export function TaskDetails() {
       .in('id', taskIds);
 
     if (error) {
-      toast.error(error.message || 'Erro ao excluir demanda fixa');
+      toast.error(error.message || 'Erro ao excluir demanda');
       return;
     }
 
-    toast.success('Demanda fixa excluída com sucesso!');
+    toast.success('Demanda excluída com sucesso!');
     navigate('/');
   }
 
@@ -563,26 +643,38 @@ export function TaskDetails() {
       {isAdmin && (
         <Card className="p-6 mb-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
           <div className="flex items-center justify-between gap-3 mb-4">
-            <h2 className="font-semibold text-gray-900 dark:text-white">
-              Ações do gestor
-            </h2>
+            <div>
+              <h2 className="font-semibold text-gray-900 dark:text-white">
+                Ações do ADM
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                Edite ou exclua completamente esta demanda.
+              </p>
+            </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setEditingTask((current) => !current)}
-            >
-              {editingTask ? 'Cancelar edição' : 'Editar demanda'}
-            </Button>
+            {task.status !== 'completed' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingTask((current) => !current)}
+              >
+                {editingTask ? 'Cancelar edição' : 'Editar demanda'}
+              </Button>
+            )}
           </div>
 
-          {editingTask && (
-            <div className="space-y-4">
+          {task.status === 'completed' && (
+            <div className="p-3 mb-4 rounded-lg bg-gray-100 dark:bg-[#181818] border border-gray-200 dark:border-[#1F1F1F] text-sm text-gray-700 dark:text-[#A1A1A1]">
+              Esta tarefa já foi concluída, por isso não pode ser editada.
+            </div>
+          )}
+
+          {editingTask && task.status !== 'completed' && (
+            <div className="space-y-5">
               <div>
                 <Label className="text-gray-900 dark:text-white">
                   Título
                 </Label>
-
                 <input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
@@ -594,7 +686,6 @@ export function TaskDetails() {
                 <Label className="text-gray-900 dark:text-white">
                   Descrição
                 </Label>
-
                 <Textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
@@ -606,13 +697,62 @@ export function TaskDetails() {
                 <Label className="text-gray-900 dark:text-white">
                   Horário limite
                 </Label>
-
                 <input
                   type="time"
                   value={editDeadline}
                   onChange={(e) => setEditDeadline(e.target.value)}
                   className="w-full border rounded px-3 py-2 mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
                 />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-gray-900 dark:text-white">
+                  Checklist
+                </Label>
+
+                {editChecklist.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-[#A1A1A1]">
+                    Nenhum item no checklist.
+                  </p>
+                ) : (
+                  editChecklist.map((item) => (
+                    <div key={item.id} className="flex gap-2">
+                      <input
+                        value={item.text}
+                        onChange={(e) =>
+                          updateEditChecklistText(item.id, e.target.value)
+                        }
+                        className="flex-1 border rounded px-3 py-2 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleDeleteChecklistItem(item.id)}
+                        className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    value={newChecklistText}
+                    onChange={(e) => setNewChecklistText(e.target.value)}
+                    placeholder="Novo item do checklist"
+                    className="flex-1 border rounded px-3 py-2 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddChecklistItem}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
               </div>
 
               <Button
@@ -625,26 +765,15 @@ export function TaskDetails() {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-gray-200 dark:border-[#1F1F1F]">
+          <div className="flex justify-end mt-5 pt-5 border-t border-gray-200 dark:border-[#1F1F1F]">
             <Button
               type="button"
               variant="outline"
-              onClick={handleDeleteTask}
-              className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30"
+              onClick={handleDeleteEverything}
+              className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30"
             >
-              Excluir esta demanda
+              Excluir demanda completamente
             </Button>
-
-            {(task.is_recurring || task.recurring_parent_id) && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDeleteRecurringTask}
-                className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30"
-              >
-                Excluir demanda fixa inteira
-              </Button>
-            )}
           </div>
         </Card>
       )}
