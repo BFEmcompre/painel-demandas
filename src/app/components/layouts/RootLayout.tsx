@@ -535,14 +535,31 @@ export function RootLayout() {
         />
 
         <main className="
-          flex-1
-          overflow-y-auto
-          p-6
-          bg-gray-50
-          dark:bg-[#0B0B0B]
-        ">
-          <Outlet />
-        </main>
+  flex-1
+  overflow-y-auto
+  p-6
+  bg-gray-50
+  dark:bg-[#0B0B0B]
+">
+  <Outlet />
+</main>
+
+<footer
+  className="
+    border-t
+    border-gray-200
+    dark:border-[#1E293B]
+    bg-white
+    dark:bg-[#111827]
+    py-3
+    text-center
+    text-sm
+    text-gray-500
+    dark:text-gray-400
+  "
+>
+  Versão 1.0.0 | Desenvolvido por Gabriel Liberato
+</footer>
 
       </div>
 
