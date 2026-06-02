@@ -123,6 +123,35 @@ export function RootLayout() {
 
     setCurrentUserId(userId);
 
+const { data: profileData } = await supabase
+  .from('profiles')
+  .select('name')
+  .eq('id', userId)
+  .single();
+
+if (
+  profileData?.name === 'Gabriel Felipe de Oliveira Liberato'
+) {
+  const today = new Date().toLocaleDateString();
+
+  const lastShown = localStorage.getItem(
+    'creator-greeting'
+  );
+
+  if (lastShown !== today) {
+    setTimeout(() => {
+      alert(
+        '👋 Olá! Criador :) Obrigado por continuar evoluindo o FLOW!'
+      );
+    }, 1000);
+
+    localStorage.setItem(
+      'creator-greeting',
+      today
+    );
+  }
+}
+
     setLoading(false);
 
     const { data: profile } = await supabase
@@ -548,14 +577,14 @@ export function RootLayout() {
   className="
     border-t
     border-gray-200
-    dark:border-[#1E293B]
+    dark:border-[#1F1F1F]
     bg-white
-    dark:bg-[#111827]
+    dark:bg-[#0B0B0B]
     py-3
     text-center
-    text-sm
+    text-xs
     text-gray-500
-    dark:text-gray-400
+    dark:text-[#707070]
   "
 >
   Versão 1.0.0 | Desenvolvido por Gabriel Liberato

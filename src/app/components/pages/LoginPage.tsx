@@ -64,7 +64,7 @@ export function LoginPage() {
   className="w-24 h-24 object-contain mb-4"
 />
 
-<h1 className="text-2xl font-semibold text-gray-900">𝚃𝚊𝚜𝚔 𝙷𝚞𝚋</h1>
+<h1 className="text-2xl font-semibold text-gray-900">𝙁𝙇𝙊𝙒</h1>
             <p className="text-gray-500 mt-1">Entre com seu usuário</p>
           </div>
 
