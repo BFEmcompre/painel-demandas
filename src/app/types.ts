@@ -20,6 +20,7 @@ export interface Task {
   date: string;
   deadline: string;
   status: 'pending' | 'completed' | 'overdue';
+  priority?: number;
   checklist: ChecklistItem[];
   photo?: string;
   completedAt?: string;
