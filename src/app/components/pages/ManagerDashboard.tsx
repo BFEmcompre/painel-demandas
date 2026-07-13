@@ -16,6 +16,13 @@ import {
 } from 'lucide-react';
 
 import { supabase } from '../../lib/supabase';
+import {
+  PRIORITY_LEVELS,
+  priorityLabel,
+  priorityBadgeClass,
+  priorityBorderClass,
+  sortByPriorityThenDeadline,
+} from '../../lib/priority';
 
 type Task = {
   id: string;
@@ -27,6 +34,7 @@ type Task = {
   date: string;
   status: 'pending' | 'completed' | 'overdue';
   is_recurring?: boolean | null;
+  priority?: number | null;
 };
 
 type Responsible = {
@@ -52,6 +60,11 @@ export function ManagerDashboard() {
   const [
     responsibleFilter,
     setResponsibleFilter,
+  ] = useState<string>('all');
+
+  const [
+    priorityFilter,
+    setPriorityFilter,
   ] = useState<string>('all');
 
   useEffect(() => {
@@ -115,6 +128,7 @@ export function ManagerDashboard() {
             recurringTask.recurring_deadline,
           recurring_parent_id:
             recurringTask.id,
+          priority: recurringTask.priority,
         })
         .select()
         .single();
@@ -237,7 +251,7 @@ export function ManagerDashboard() {
       (t) => t.status === 'overdue'
     ).length;
 
-  const filteredTasks =
+  const filteredTasks = sortByPriorityThenDeadline(
     todayTasks.filter((task) => {
       const matchesSearch =
         task.title
@@ -260,12 +274,19 @@ export function ManagerDashboard() {
         task.responsible_id ===
           responsibleFilter;
 
+      const matchesPriority =
+        priorityFilter === 'all' ||
+        String(task.priority ?? 3) ===
+          priorityFilter;
+
       return (
         matchesSearch &&
         matchesStatus &&
-        matchesResponsible
+        matchesResponsible &&
+        matchesPriority
       );
-    });
+    })
+  );
 
   const getStatusColor = (
     status: string
@@ -656,6 +677,46 @@ export function ManagerDashboard() {
             </SelectContent>
           </Select>
 
+          <Select
+            value={priorityFilter}
+            onValueChange={setPriorityFilter}
+          >
+
+            <SelectTrigger className="
+              w-full
+              lg:w-48
+
+              bg-white
+              border-gray-300
+              text-gray-900
+
+              dark:bg-[#181818]
+              dark:border-[#2A2A2A]
+              dark:text-white
+            ">
+
+              <SelectValue placeholder="Prioridade" />
+
+            </SelectTrigger>
+
+            <SelectContent className="
+              dark:bg-[#181818]
+              dark:border-[#2A2A2A]
+            ">
+
+              <SelectItem value="all">
+                Todas prioridades
+              </SelectItem>
+
+              {PRIORITY_LEVELS.map((level) => (
+                <SelectItem key={level} value={String(level)}>
+                  {priorityLabel(level)}
+                </SelectItem>
+              ))}
+
+            </SelectContent>
+          </Select>
+
         </div>
 
         {/* TAREFAS */}
@@ -689,7 +750,7 @@ export function ManagerDashboard() {
                     `/tarefa/${task.id}`
                   )
                 }
-                className="
+                className={`
                   p-4
                   rounded-xl
                   cursor-pointer
@@ -703,7 +764,9 @@ export function ManagerDashboard() {
                   dark:bg-[#181818]
                   dark:border-[#1F1F1F]
                   dark:hover:bg-[#1D1D1D]
-                "
+
+                  ${priorityBorderClass(task.priority)}
+                `}
               >
 
                 <div className="
@@ -714,13 +777,28 @@ export function ManagerDashboard() {
 
                   <div>
 
-                    <h3 className="
-                      font-semibold
-                      text-gray-900
-                      dark:text-white
-                    ">
-                      {task.title}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="
+                        font-semibold
+                        text-gray-900
+                        dark:text-white
+                      ">
+                        {task.title}
+                      </h3>
+
+                      <span
+                        className={`
+                          px-2
+                          py-0.5
+                          rounded-full
+                          text-xs
+                          font-medium
+                          ${priorityBadgeClass(task.priority)}
+                        `}
+                      >
+                        {priorityLabel(task.priority)}
+                      </span>
+                    </div>
 
                     <p className="
                       text-sm
