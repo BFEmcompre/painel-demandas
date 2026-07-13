@@ -353,23 +353,23 @@ export function CreateDemand() {
                 Demanda fixa diária
               </p>
 
-            <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 dark:bg-[#181818] dark:border-[#2A2A2A] rounded-lg">
-  <Checkbox
-    checked={requiresPhoto}
-    onCheckedChange={(checked) => setRequiresPhoto(Boolean(checked))}
-  />
-  <div>
-    <p className="font-medium text-gray-900 dark:text-white">
-      Exigir foto para concluir
-    </p>
-    <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
-      Se desmarcado, o responsável poderá concluir sem anexar foto.
-    </p>
-  </div>
-</div>
-
               <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
                 Essa demanda deverá ser realizada todos os dias durante o expediente.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 dark:bg-[#181818] dark:border-[#2A2A2A] rounded-lg">
+            <Checkbox
+              checked={requiresPhoto}
+              onCheckedChange={(checked) => setRequiresPhoto(Boolean(checked))}
+            />
+            <div>
+              <p className="font-medium text-gray-900 dark:text-white">
+                Exigir foto para concluir
+              </p>
+              <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
+                Se desmarcado, o responsável poderá concluir sem anexar foto.
               </p>
             </div>
           </div>

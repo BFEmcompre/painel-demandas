@@ -43,6 +43,7 @@ type Task = {
   recurring_parent_id?: string | null;
   is_recurring?: boolean | null;
   priority?: number | null;
+  requires_photo?: boolean | null;
 };
 
 type ChecklistItem = {
@@ -75,6 +76,7 @@ export function TaskDetails() {
   const [editDescription, setEditDescription] = useState('');
   const [editDeadline, setEditDeadline] = useState('');
   const [editPriority, setEditPriority] = useState<PriorityLevel>(3);
+  const [editRequiresPhoto, setEditRequiresPhoto] = useState(true);
   const [editChecklist, setEditChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistText, setNewChecklistText] = useState('');
 
@@ -148,6 +150,7 @@ export function TaskDetails() {
     setEditDescription(taskData?.description || '');
     setEditDeadline(taskData?.deadline?.split('T')[1]?.slice(0, 5) || '');
     setEditPriority(normalizePriority(taskData?.priority));
+    setEditRequiresPhoto(taskData?.requires_photo !== false);
 
   }
 
@@ -271,10 +274,12 @@ export function TaskDetails() {
       return;
     }
 
+    const photoIsRequired = task.requires_photo !== false;
+
     const hasAnyPhoto =
       savedPhotos.length > 0 || newPhotos.length > 0;
 
-    if (!hasAnyPhoto) {
+    if (photoIsRequired && !hasAnyPhoto) {
       toast.error(
         'Envie pelo menos uma foto antes de concluir'
       );
@@ -491,6 +496,7 @@ export function TaskDetails() {
       description: editDescription,
       deadline: deadlineFull,
       priority: editPriority,
+      requires_photo: editRequiresPhoto,
     };
 
     if (task.is_recurring) {
@@ -752,6 +758,25 @@ export function TaskDetails() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-[#181818] border border-blue-100 dark:border-[#2A2A2A] rounded-lg">
+                <Checkbox
+                  checked={editRequiresPhoto}
+                  onCheckedChange={(checked) =>
+                    setEditRequiresPhoto(Boolean(checked))
+                  }
+                />
+
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    Exigir foto para concluir
+                  </p>
+
+                  <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
+                    Se desmarcado, o responsável poderá concluir sem anexar foto.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -1161,11 +1186,19 @@ export function TaskDetails() {
           </label>
         )}
 
-        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
-            É obrigatório enviar pelo menos uma foto para concluir.
-          </p>
-        </div>
+        {task.requires_photo !== false ? (
+          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
+              É obrigatório enviar pelo menos uma foto para concluir.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-[#181818] border border-gray-200 dark:border-[#1F1F1F] rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
+              O envio de foto é opcional para esta demanda.
+            </p>
+          </div>
+        )}
       </Card>
 
       <Card className="p-6 mb-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
