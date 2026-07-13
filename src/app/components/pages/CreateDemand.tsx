@@ -6,9 +6,22 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import {
+  PRIORITY_LEVELS,
+  DEFAULT_PRIORITY,
+  PRIORITY_LABEL,
+  type PriorityLevel,
+} from '../../lib/priority';
 
 type Responsible = {
   id: string;
@@ -31,6 +44,7 @@ export function CreateDemand() {
   const [deadline, setDeadline] = useState('17:00');
   const [isRecurring, setIsRecurring] = useState(false);
   const [checklistItems, setChecklistItems] = useState<string[]>(['']);
+  const [priority, setPriority] = useState<PriorityLevel>(DEFAULT_PRIORITY);
 
   useEffect(() => {
     loadResponsibles();
@@ -101,6 +115,7 @@ export function CreateDemand() {
         status: 'pending',
         is_recurring: isRecurring,
         recurring_deadline: deadline,
+        priority,
       })
       .select()
       .single();
@@ -231,6 +246,44 @@ export function CreateDemand() {
                 dark:text-white
               "
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-gray-900 dark:text-white">
+              Prioridade *
+            </Label>
+
+            <Select
+              value={String(priority)}
+              onValueChange={(value) =>
+                setPriority(Number(value) as PriorityLevel)
+              }
+            >
+              <SelectTrigger
+                className="
+                  bg-white
+                  dark:bg-[#181818]
+                  border-gray-300
+                  dark:border-[#2A2A2A]
+                  text-gray-900
+                  dark:text-white
+                "
+              >
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+
+              <SelectContent className="dark:bg-[#181818] dark:border-[#2A2A2A]">
+                {PRIORITY_LEVELS.map((level) => (
+                  <SelectItem key={level} value={String(level)}>
+                    P{level} · {PRIORITY_LABEL[level]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <p className="text-xs text-gray-500 dark:text-[#707070]">
+              1 é a prioridade máxima, 3 e 4 são médias, 5 é baixa.
+            </p>
           </div>
 
           <div className="space-y-3">
