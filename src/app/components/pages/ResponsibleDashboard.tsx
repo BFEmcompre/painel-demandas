@@ -4,6 +4,12 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { CheckCircle, Clock, AlertCircle, Image } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import {
+  priorityLabel,
+  priorityBadgeClass,
+  priorityBorderClass,
+  sortByPriorityThenDeadline,
+} from '../../lib/priority';
 
 type Task = {
   id: string;
@@ -16,6 +22,7 @@ type Task = {
   status: 'pending' | 'completed' | 'overdue';
   completed_at: string | null;
   photo_url: string | null;
+  priority?: number | null;
 };
 
 export function ResponsibleDashboard() {
@@ -63,6 +70,7 @@ export function ResponsibleDashboard() {
           is_recurring: false,
           recurring_deadline: recurringTask.recurring_deadline,
           recurring_parent_id: recurringTask.id,
+          priority: recurringTask.priority,
         })
         .select()
         .single();
@@ -149,7 +157,7 @@ export function ResponsibleDashboard() {
       .or('is_recurring.eq.false,is_recurring.is.null')
       .order('deadline');
 
-    setTasks(tasksData || []);
+    setTasks(sortByPriorityThenDeadline(tasksData || []));
   }
 
   const getStatusColor = (status: string) => {
@@ -221,9 +229,15 @@ export function ResponsibleDashboard() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold mb-1 text-gray-900 dark:text-white">
           Minhas Tarefas
         </h2>
+
+        {tasks.length > 0 && (
+          <p className="text-sm text-gray-500 dark:text-[#A1A1A1] mb-4">
+            Ordenadas por prioridade — comece pelas do topo.
+          </p>
+        )}
 
         {tasks.length === 0 ? (
           <Card className="p-12 text-center bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F]">
@@ -234,11 +248,11 @@ export function ResponsibleDashboard() {
           tasks.map((task) => (
             <Card
               key={task.id}
-              className="p-5 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F] hover:border-gray-300 dark:hover:border-[#2A2A2A] transition-all duration-300"
+              className={`p-5 bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#1F1F1F] hover:border-gray-300 dark:hover:border-[#2A2A2A] transition-all duration-300 ${priorityBorderClass(task.priority)}`}
             >
               <div className="flex justify-between mb-3">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {getStatusIcon(task.status)}
 
                     <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -247,6 +261,10 @@ export function ResponsibleDashboard() {
 
                     <span className={`px-2 py-1 text-xs rounded ${getStatusColor(task.status)}`}>
                       {getStatusText(task.status)}
+                    </span>
+
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${priorityBadgeClass(task.priority)}`}>
+                      {priorityLabel(task.priority)}
                     </span>
                   </div>
 
