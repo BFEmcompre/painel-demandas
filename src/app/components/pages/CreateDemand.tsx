@@ -44,6 +44,7 @@ export function CreateDemand() {
   const [deadline, setDeadline] = useState('17:00');
   const [isRecurring, setIsRecurring] = useState(false);
   const [checklistItems, setChecklistItems] = useState<string[]>(['']);
+  const [requiresPhoto, setRequiresPhoto] = useState(true);
   const [priority, setPriority] = useState<PriorityLevel>(DEFAULT_PRIORITY);
 
   useEffect(() => {
@@ -116,6 +117,7 @@ export function CreateDemand() {
         is_recurring: isRecurring,
         recurring_deadline: deadline,
         priority,
+        requires_photo: requiresPhoto, 
       })
       .select()
       .single();
@@ -350,6 +352,21 @@ export function CreateDemand() {
               <p className="font-medium text-gray-900 dark:text-white">
                 Demanda fixa diária
               </p>
+
+            <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 dark:bg-[#181818] dark:border-[#2A2A2A] rounded-lg">
+  <Checkbox
+    checked={requiresPhoto}
+    onCheckedChange={(checked) => setRequiresPhoto(Boolean(checked))}
+  />
+  <div>
+    <p className="font-medium text-gray-900 dark:text-white">
+      Exigir foto para concluir
+    </p>
+    <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
+      Se desmarcado, o responsável poderá concluir sem anexar foto.
+    </p>
+  </div>
+</div>
 
               <p className="text-sm text-gray-600 dark:text-[#A1A1A1]">
                 Essa demanda deverá ser realizada todos os dias durante o expediente.

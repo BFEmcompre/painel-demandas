@@ -129,6 +129,7 @@ export function ManagerDashboard() {
           recurring_parent_id:
             recurringTask.id,
           priority: recurringTask.priority,
+          requires_photo: recurringTask.requires_photo,
         })
         .select()
         .single();
