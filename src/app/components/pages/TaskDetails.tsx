@@ -14,6 +14,20 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
+  PRIORITY_LEVELS,
+  priorityLabel,
+  priorityBadgeClass,
+  normalizePriority,
+  type PriorityLevel,
+} from '../../lib/priority';
 
 type Task = {
   id: string;
@@ -28,6 +42,7 @@ type Task = {
   observation: string | null;
   recurring_parent_id?: string | null;
   is_recurring?: boolean | null;
+  priority?: number | null;
 };
 
 type ChecklistItem = {
@@ -59,6 +74,7 @@ export function TaskDetails() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDeadline, setEditDeadline] = useState('');
+  const [editPriority, setEditPriority] = useState<PriorityLevel>(3);
   const [editChecklist, setEditChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistText, setNewChecklistText] = useState('');
 
@@ -131,6 +147,7 @@ export function TaskDetails() {
     setEditTitle(taskData?.title || '');
     setEditDescription(taskData?.description || '');
     setEditDeadline(taskData?.deadline?.split('T')[1]?.slice(0, 5) || '');
+    setEditPriority(normalizePriority(taskData?.priority));
 
   }
 
@@ -473,6 +490,7 @@ export function TaskDetails() {
       title: editTitle,
       description: editDescription,
       deadline: deadlineFull,
+      priority: editPriority,
     };
 
     if (task.is_recurring) {
@@ -606,9 +624,15 @@ export function TaskDetails() {
         dark:border-[#1F1F1F]
       ">
 
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          {task.title}
-        </h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            {task.title}
+          </h1>
+
+          <span className={`px-2 py-1 text-xs rounded-full font-medium ${priorityBadgeClass(task.priority)}`}>
+            {priorityLabel(task.priority)}
+          </span>
+        </div>
 
         <p className="text-gray-600 dark:text-[#A1A1A1] mt-2">
           {task.description}
@@ -703,6 +727,31 @@ export function TaskDetails() {
                   onChange={(e) => setEditDeadline(e.target.value)}
                   className="w-full border rounded px-3 py-2 mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white"
                 />
+              </div>
+
+              <div>
+                <Label className="text-gray-900 dark:text-white">
+                  Prioridade
+                </Label>
+
+                <Select
+                  value={String(editPriority)}
+                  onValueChange={(value) =>
+                    setEditPriority(Number(value) as PriorityLevel)
+                  }
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white border-gray-300 text-gray-900 dark:bg-[#181818] dark:border-[#2A2A2A] dark:text-white">
+                    <SelectValue placeholder="Prioridade" />
+                  </SelectTrigger>
+
+                  <SelectContent className="dark:bg-[#181818] dark:border-[#2A2A2A]">
+                    {PRIORITY_LEVELS.map((level) => (
+                      <SelectItem key={level} value={String(level)}>
+                        {priorityLabel(level)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-3">
