@@ -72,4 +72,41 @@ supabaseClient.auth.getUser = ((jwt?: string) => {
   return request;
 }) as typeof supabaseClient.auth.getUser;
 
+// supabase-js transforma qualquer HTTP 4xx/5xx de Edge Function em uma mensagem
+// generica ("Edge Function returned a non-2xx status code"). Para o FLOW isso
+// atrapalha muito o diagnostico. Quando houver um Response no contexto do erro,
+// lemos uma copia do corpo e colocamos a mensagem real no proprio erro.
+const originalFunctionsInvoke = supabaseClient.functions.invoke.bind(supabaseClient.functions);
+
+supabaseClient.functions.invoke = (async (...args: Parameters<typeof originalFunctionsInvoke>) => {
+  const result = await originalFunctionsInvoke(...args);
+  const functionError = result.error as any;
+  const response = functionError?.context;
+
+  if (functionError && response instanceof Response) {
+    try {
+      const clone = response.clone();
+      const contentType = clone.headers.get('content-type') || '';
+      let detail = '';
+
+      if (contentType.includes('application/json')) {
+        const body = await clone.json();
+        detail = String(body?.error || body?.message || JSON.stringify(body));
+      } else {
+        detail = (await clone.text()).trim();
+      }
+
+      if (detail) {
+        functionError.message = `Edge Function ${response.status}: ${detail}`;
+      } else {
+        functionError.message = `Edge Function ${response.status}: ${functionError.message}`;
+      }
+    } catch {
+      functionError.message = `Edge Function ${response.status}: ${functionError.message}`;
+    }
+  }
+
+  return result;
+}) as typeof supabaseClient.functions.invoke;
+
 export const supabase = supabaseClient;
