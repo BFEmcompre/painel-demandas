@@ -62,6 +62,10 @@ alter table public.indicator_report_blocks
   alter column width type numeric using width::numeric,
   alter column width set default 44;
 
+-- Permite upsert simples dos relatorios diarios pelo cliente/PostgREST.
+create unique index if not exists indicator_reports_reference_unique
+  on public.indicator_reports(platform_id, report_type, reference_date);
+
 create index if not exists indicator_submissions_platform_date_idx
   on public.indicator_submissions(platform_id, reference_date desc);
 create index if not exists indicator_submission_images_submission_idx
@@ -97,7 +101,7 @@ set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
--- Politicas de storage aditivas. O nome dos arquivos comeca pelo uid do usuario.
+-- Politicas de storage aditivas.
 drop policy if exists "platform indicators authenticated select" on storage.objects;
 create policy "platform indicators authenticated select"
 on storage.objects for select to authenticated
