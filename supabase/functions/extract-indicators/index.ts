@@ -1,18 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type MetricDefinition = {
-  id: string;
-  name: string;
-  unit: string;
-  aliases?: string[];
-  extraction_hint?: string | null;
-};
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+function metricKey(name: string, section?: string | null) {
+  return `${section || "geral"}::${name}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -44,39 +45,37 @@ Deno.serve(async (req) => {
       .single();
     if (submissionError || !submission) throw new Error("Envio não encontrado");
 
-    const [{ data: platform }, { data: metrics }, { data: images }] = await Promise.all([
+    const [{ data: platform }, { data: images }, { data: existingMetrics }] = await Promise.all([
       supabase.from("platforms").select("id,name").eq("id", submission.platform_id).single(),
-      supabase
-        .from("indicator_definitions")
-        .select("id,name,unit,aliases,extraction_hint")
-        .eq("platform_id", submission.platform_id)
-        .eq("active", true)
-        .order("display_order"),
       supabase
         .from("indicator_submission_images")
         .select("id,image_url,display_order")
         .eq("submission_id", submissionId)
         .order("display_order"),
+      supabase
+        .from("indicator_definitions")
+        .select("id,name,unit,metric_key,source_section,display_order")
+        .eq("platform_id", submission.platform_id)
+        .eq("active", true)
+        .order("display_order"),
     ]);
 
-    const definitions = (metrics || []) as MetricDefinition[];
-    if (!definitions.length) throw new Error("Nenhuma métrica configurada para esta plataforma");
     if (!images?.length) throw new Error("Nenhuma imagem anexada ao envio");
 
     await supabase.from("indicator_submissions").update({ status: "extracting" }).eq("id", submissionId);
 
-    const metricDictionary = definitions.map((m) => ({
+    const known = (existingMetrics || []).map((m: any) => ({
       id: m.id,
       name: m.name,
       unit: m.unit,
-      aliases: m.aliases || [],
-      hint: m.extraction_hint || "",
+      section: m.source_section,
+      key: m.metric_key,
     }));
 
     const content: any[] = [
       {
         type: "input_text",
-        text: `Você está lendo prints reais de indicadores da plataforma ${platform?.name || ""}. Extraia SOMENTE as métricas cadastradas no dicionário abaixo.\n\nDICIONÁRIO:\n${JSON.stringify(metricDictionary)}\n\nRegras:\n- Não invente valores.\n- Se uma métrica não estiver visível, retorne found=false e value=null.\n- Converta porcentagens para o número exibido, por exemplo 0,42% => 0.42.\n- Converta vírgula decimal para ponto no JSON.\n- Nota 4,83/5 deve retornar 4.83.\n- Para cada métrica, inclua um trecho curto em raw_text que ajude o usuário a conferir a leitura.\n- confidence deve ficar entre 0 e 1.\n- Se houver mais de uma ocorrência da mesma métrica, escolha o valor de desempenho atual/principal, não metas ou valores históricos.\n- Não interprete setas de variação como o valor principal.`,
+        text: `Você está lendo prints reais da plataforma ${platform?.name || ""}. Descubra TODOS os indicadores de desempenho visíveis que façam parte dos cards/tabelas principais usados para acompanhamento operacional.\n\nIndicadores já conhecidos desta plataforma (use o mesmo nome sempre que for claramente o mesmo indicador):\n${JSON.stringify(known)}\n\nRegras:\n- Extraia os indicadores e seus valores atuais/principais.\n- Não extraia datas, horários, contadores de navegação, IDs, metas soltas, valores históricos de gráficos ou textos decorativos como se fossem indicadores.\n- Se houver uma seção clara, informe section (ex.: Atendimento, Reputação, Logística, Qualidade).\n- name deve ser curto e estável, por exemplo: Reclamações, Mediações, Cancelamentos, Entrega no prazo.\n- unit deve ser %, R$, nota, dias, pontos ou number.\n- value deve ser numérico. Ex.: 0,42% => 0.42; 4,83/5 => 4.83; R$ 1.234,56 => 1234.56.\n- raw_text deve trazer um trecho curto do print para conferência.\n- confidence de 0 a 1.\n- Não invente dados ausentes.\n- Se o mesmo indicador aparecer mais de uma vez, prefira o valor atual/principal.`,
       },
       ...images.map((image: any) => ({ type: "input_image", image_url: image.image_url, detail: "high" })),
     ];
@@ -105,22 +104,23 @@ Deno.serve(async (req) => {
                     type: "object",
                     additionalProperties: false,
                     properties: {
-                      indicator_id: { type: "string" },
-                      found: { type: "boolean" },
-                      value: { anyOf: [{ type: "number" }, { type: "null" }] },
+                      name: { type: "string" },
+                      section: { anyOf: [{ type: "string" }, { type: "null" }] },
+                      unit: { type: "string", enum: ["%", "R$", "nota", "dias", "pontos", "number"] },
+                      value: { type: "number" },
                       confidence: { type: "number" },
-                      raw_text: { type: "string" },
+                      raw_text: { type: "string" }
                     },
-                    required: ["indicator_id", "found", "value", "confidence", "raw_text"],
-                  },
+                    required: ["name", "section", "unit", "value", "confidence", "raw_text"]
+                  }
                 },
-                warnings: { type: "array", items: { type: "string" } },
+                warnings: { type: "array", items: { type: "string" } }
               },
-              required: ["metrics", "warnings"],
-            },
-          },
-        },
-      }),
+              required: ["metrics", "warnings"]
+            }
+          }
+        }
+      })
     });
 
     if (!response.ok) {
@@ -133,8 +133,47 @@ Deno.serve(async (req) => {
     if (!rawOutput) throw new Error("O modelo não retornou dados estruturados");
 
     const parsed = JSON.parse(rawOutput);
-    const allowedIds = new Set(definitions.map((m) => m.id));
-    const extracted = (parsed.metrics || []).filter((m: any) => allowedIds.has(m.indicator_id));
+    const discovered: any[] = [];
+
+    for (let index = 0; index < (parsed.metrics || []).length; index++) {
+      const item = parsed.metrics[index];
+      const key = metricKey(item.name, item.section);
+
+      let definition = (existingMetrics || []).find((m: any) => m.metric_key === key);
+
+      if (!definition) {
+        const { data: created, error: createError } = await supabase
+          .from("indicator_definitions")
+          .insert({
+            platform_id: submission.platform_id,
+            name: item.name.trim(),
+            unit: item.unit,
+            direction: "neutral",
+            weekly_aggregation: "last",
+            display_order: (existingMetrics?.length || 0) + index + 1,
+            metric_key: key,
+            source_section: item.section || null,
+            auto_discovered: true,
+            created_by: userData.user.id,
+            active: true
+          })
+          .select("id,name,unit,metric_key,source_section,display_order")
+          .single();
+        if (createError) throw createError;
+        definition = created;
+      }
+
+      discovered.push({
+        indicator_id: definition.id,
+        name: definition.name,
+        section: definition.source_section,
+        unit: definition.unit,
+        found: true,
+        value: item.value,
+        confidence: item.confidence,
+        raw_text: item.raw_text
+      });
+    }
 
     for (const image of images) {
       await supabase.from("indicator_submission_images").update({ extraction_status: "processed" }).eq("id", image.id);
@@ -145,17 +184,17 @@ Deno.serve(async (req) => {
       .update({
         status: "extracted",
         extracted_at: new Date().toISOString(),
-        extraction_warnings: parsed.warnings || [],
+        extraction_warnings: parsed.warnings || []
       })
       .eq("id", submissionId);
 
-    return new Response(JSON.stringify({ metrics: extracted, warnings: parsed.warnings || [] }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ metrics: discovered, warnings: parsed.warnings || [] }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 });
