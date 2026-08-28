@@ -47,19 +47,19 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error("Usuário não autenticado");
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) throw new Error("Usuário não autenticado");
 
     const body = await req.json();
     const submissionId = String(body.submission_id || "");
     if (!submissionId) throw new Error("submission_id obrigatório");
 
-    const { data: submission } = await supabase
+    const { data: submission, error: submissionError } = await supabase
       .from("indicator_submissions")
       .select("id,platform_id,reference_date")
       .eq("id", submissionId)
       .single();
-    if (!submission) throw new Error("Envio não encontrado");
+    if (submissionError || !submission) throw new Error("Envio não encontrado");
 
     const [{ data: platform }, { data: images }, { data: existingMetrics }] = await Promise.all([
       supabase.from("platforms").select("id,name").eq("id", submission.platform_id).single(),
@@ -96,9 +96,12 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
     for (const image of images) parts.push(await getImagePart(image.image_url));
 
     const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": geminiKey,
+      },
       body: JSON.stringify({
         contents: [{ role: "user", parts }],
         generationConfig: {
@@ -108,13 +111,25 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
       }),
     });
 
-    if (!response.ok) throw new Error(`Gemini retornou ${response.status}: ${await response.text()}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini retornou ${response.status}: ${errorText}`);
+    }
 
     const ai = await response.json();
     const raw = ai?.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("").trim();
-    if (!raw) throw new Error("Gemini não retornou conteúdo");
+    if (!raw) {
+      const finishReason = ai?.candidates?.[0]?.finishReason || ai?.promptFeedback?.blockReason || "sem conteúdo";
+      throw new Error(`Gemini não retornou conteúdo (${finishReason})`);
+    }
 
-    const parsed = JSON.parse(raw);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error(`Gemini retornou JSON inválido: ${raw.slice(0, 300)}`);
+    }
+
     const discovered: any[] = [];
     const seen = new Set<string>();
 
@@ -166,6 +181,7 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
     }
 
     const warnings = Array.isArray(parsed.warnings) ? parsed.warnings.map(String) : [];
+    if (!discovered.length) warnings.push("O Gemini analisou os prints, mas não encontrou indicadores numéricos confiáveis.");
 
     for (const image of images) {
       await supabase.from("indicator_submission_images").update({
@@ -181,11 +197,12 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
     }).eq("id", submissionId);
 
     return new Response(JSON.stringify({ metrics: discovered, warnings, provider: "gemini", model }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(message);
+    console.error("extract-indicators:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
