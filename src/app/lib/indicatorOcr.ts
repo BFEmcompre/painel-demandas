@@ -22,15 +22,63 @@ export type OcrProgress = {
   status: string;
 };
 
-const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.esm.min.js';
+const TESSERACT_SCRIPT_ID = 'flow-tesseract-browser';
+const TESSERACT_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js';
 
-let tesseractModulePromise: Promise<any> | null = null;
+type FlowWindow = Window & {
+  Tesseract?: any;
+};
+
+let tesseractLoaderPromise: Promise<any> | null = null;
+
+function getBrowserTesseract() {
+  const api = (window as FlowWindow).Tesseract;
+  if (api?.createWorker) return api;
+  if (api?.default?.createWorker) return api.default;
+  return null;
+}
 
 async function loadTesseract() {
-  if (!tesseractModulePromise) {
-    tesseractModulePromise = import(/* @vite-ignore */ TESSERACT_URL);
+  const alreadyLoaded = getBrowserTesseract();
+  if (alreadyLoaded) return alreadyLoaded;
+
+  if (!tesseractLoaderPromise) {
+    tesseractLoaderPromise = new Promise((resolve, reject) => {
+      const finish = () => {
+        const api = getBrowserTesseract();
+        if (api?.createWorker) {
+          resolve(api);
+        } else {
+          reject(new Error('O Tesseract foi carregado, mas createWorker não ficou disponível.'));
+        }
+      };
+
+      const existing = document.getElementById(TESSERACT_SCRIPT_ID) as HTMLScriptElement | null;
+      if (existing) {
+        if (getBrowserTesseract()) {
+          finish();
+          return;
+        }
+        existing.addEventListener('load', finish, { once: true });
+        existing.addEventListener('error', () => reject(new Error('Falha ao carregar o mecanismo OCR.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = TESSERACT_SCRIPT_ID;
+      script.src = TESSERACT_SCRIPT_URL;
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.addEventListener('load', finish, { once: true });
+      script.addEventListener('error', () => reject(new Error('Falha ao carregar o mecanismo OCR. Verifique sua conexão com a internet.')), { once: true });
+      document.head.appendChild(script);
+    }).catch((error) => {
+      tesseractLoaderPromise = null;
+      throw error;
+    });
   }
-  return tesseractModulePromise;
+
+  return tesseractLoaderPromise;
 }
 
 export function normalizeMetricKey(value: string) {
@@ -103,7 +151,6 @@ function parseNumber(token: string) {
   } else if ((value.match(/\./g) || []).length > 1) {
     value = value.replace(/\./g, '');
   } else if (/^[-+]?\d{1,3}\.\d{3}$/.test(value)) {
-    // Em telas em pt-BR, 1.234 normalmente e milhar, nao decimal.
     value = value.replace('.', '');
   }
 
@@ -164,7 +211,8 @@ function parseText(text: string, imageId: string, baseConfidence: number) {
     const key = normalizeMetricKey(name);
     if (!key || key.length < 3) return;
 
-    const sectionCandidate = previousTextLine(lines, index, name === previousTextLine(lines, index) ? 1 : 0);
+    const previousLine = previousTextLine(lines, index);
+    const sectionCandidate = previousTextLine(lines, index, name === previousLine ? 1 : 0);
     const section = sectionCandidate && normalizeMetricKey(sectionCandidate) !== key ? sectionCandidate : null;
     const unit = detectUnit(token, line, name);
 
@@ -208,13 +256,22 @@ function dedupeCandidates(input: OcrMetricCandidate[]) {
   return { metrics: Array.from(byKey.values()), warnings: Array.from(new Set(warnings)) };
 }
 
+async function fetchImageBlob(url: string) {
+  const response = await fetch(url, { mode: 'cors' });
+  if (!response.ok) throw new Error(`Não foi possível carregar um dos prints (${response.status}).`);
+  return response.blob();
+}
+
 export async function extractIndicatorsLocally(
   images: OcrImageInput[],
   onProgress?: (progress: OcrProgress) => void,
 ) {
   const Tesseract = await loadTesseract();
-  let activeImage = 0;
+  if (typeof Tesseract?.createWorker !== 'function') {
+    throw new Error('O mecanismo OCR não disponibilizou createWorker.');
+  }
 
+  let activeImage = 0;
   const worker = await Tesseract.createWorker('por+eng', undefined, {
     logger: (message: any) => {
       const raw = Number(message?.progress || 0);
@@ -233,9 +290,12 @@ export async function extractIndicatorsLocally(
   try {
     for (let index = 0; index < images.length; index += 1) {
       activeImage = index;
-      onProgress?.({ imageIndex: index + 1, imageCount: images.length, progress: 0, status: 'Preparando print' });
+      onProgress?.({ imageIndex: index + 1, imageCount: images.length, progress: 0, status: 'Carregando print' });
 
-      const result = await worker.recognize(images[index].image_url);
+      const blob = await fetchImageBlob(images[index].image_url);
+      onProgress?.({ imageIndex: index + 1, imageCount: images.length, progress: 0, status: 'Preparando OCR' });
+
+      const result = await worker.recognize(blob);
       const text = String(result?.data?.text || '');
       const baseConfidence = Math.max(0.45, Math.min(0.95, Number(result?.data?.confidence || 70) / 100));
       const metrics = parseText(text, images[index].id, baseConfidence);
