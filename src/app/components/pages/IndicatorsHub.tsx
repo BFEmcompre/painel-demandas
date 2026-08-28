@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Activity, ArrowRight, BarChart3, CalendarDays, Presentation, Sparkles } from 'lucide-react';
+import { Activity, ArrowRight, BarChart3, CalendarDays, Presentation, Settings2, Sparkles } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { supabase } from '../../lib/supabase';
@@ -84,6 +84,9 @@ export function IndicatorsHub() {
             </Button>
             <Button variant="outline" onClick={() => navigate('/indicadores/semanal')} className="border-white/15 bg-white/5 text-white hover:bg-white/10">
               <CalendarDays className="mr-2 h-4 w-4" /> Weekly Review
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/indicadores/configuracao')} className="border-white/15 bg-white/5 text-white hover:bg-white/10">
+              <Settings2 className="mr-2 h-4 w-4" /> Configurar KPIs
             </Button>
           </div>
         </div>
