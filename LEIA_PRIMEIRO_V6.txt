@@ -1,0 +1,8 @@
+FLOW V6 OCEAN + MARKETPLACE
+
+1) No Supabase > SQL Editor, rode o arquivo SUPABASE_V6_APLICAR.sql.
+2) Na pasta do projeto, mantenha o .env com VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.
+3) Execute: npm install
+4) Execute: npm run dev
+
+O mural continua usando as migrations anteriores que ja estao na pasta supabase/migrations.

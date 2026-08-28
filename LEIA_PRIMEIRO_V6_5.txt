@@ -1,0 +1,12 @@
+FLOW V6.5 - CORRECAO VISUAL
+
+- Mantem banco, rotas e logica da V6.4.
+- Nao exige SQL novo.
+- Paleta baseada na referencia: #050706, #080B09, #101512, #141A16, #17612F, #20C95A, #39FF14, #E7ECE8, #A6B0A8, #515A53 e dourado somente em destaque.
+- Corrige estrutura do Podio/Classificacao/Marketplace/Carrinho.
+- Reforca textura da lousa e contraste das anotacoes.
+- Login e cadastro seguem a mesma identidade visual.
+
+Para rodar:
+npm install
+npm run dev

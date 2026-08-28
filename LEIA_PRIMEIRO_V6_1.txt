@@ -1,0 +1,10 @@
+FLOW V6.1
+
+No Supabase Demandasdiarias, a cor do texto e as cores de papel ja foram atualizadas.
+Nao rode o SQL novamente se estiver usando esse mesmo banco.
+
+Para iniciar:
+1. npm install
+2. npm run dev
+
+O arquivo SUPABASE_V6_1_FIX.sql fica apenas para outro banco/ambiente.

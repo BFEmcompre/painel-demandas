@@ -1,0 +1,453 @@
+/* ==================================================================
+   FLOW — Cyber Blue skin (dark + glowing electric blue, circuit/hex texture)
+   Overrides the light "azure" base in theme.css with the dark cyberpunk
+   look: near-black surfaces, neon cyan-blue glow, hexagon/circuit grid.
+   ================================================================== */
+
+:root,
+.dark {
+  --background: #060912;
+  --foreground: #eaf6ff;
+  --card: #0a1122;
+  --card-foreground: #eaf6ff;
+  --popover: #0a1122;
+  --popover-foreground: #eaf6ff;
+  --primary: #2f8fff;
+  --primary-foreground: #04101f;
+  --secondary: #0d1830;
+  --secondary-foreground: #dff1ff;
+  --muted: #0b1526;
+  --muted-foreground: #7fa3c4;
+  --accent: #123056;
+  --accent-foreground: #eaf6ff;
+  --destructive: #ff5d7a;
+  --destructive-foreground: #04101f;
+  --border: rgba(56, 189, 248, 0.22);
+  --input: rgba(56, 189, 248, 0.16);
+  --input-background: #0b1526;
+  --switch-background: #12233d;
+  --ring: #22d3ee;
+  --chart-1: #2f8fff;
+  --chart-2: #22d3ee;
+  --chart-3: #f6d66f;
+  --chart-4: #7c9dff;
+  --chart-5: #38bdf8;
+  --sidebar: #0a1122;
+  --sidebar-foreground: #eaf6ff;
+  --sidebar-primary: #2f8fff;
+  --sidebar-primary-foreground: #04101f;
+  --sidebar-accent: #0d1830;
+  --sidebar-accent-foreground: #dff1ff;
+  --sidebar-border: rgba(56, 189, 248, 0.18);
+  --sidebar-ring: #22d3ee;
+
+  --cyber-glow: rgba(34, 211, 238, 0.35);
+  --cyber-line: rgba(56, 189, 248, 0.14);
+  --cyber-line-soft: rgba(56, 189, 248, 0.07);
+}
+
+html { background: #060912 !important; }
+body { background: #060912 !important; color: #eaf6ff !important; }
+
+::selection { background: rgba(47, 143, 255, 0.35) !important; color: #eaf6ff !important; }
+
+/* ---------- Hex / circuit texture (reused on shell + hero surfaces) ---------- */
+.flow-shell,
+.flow-login-shell {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(47, 143, 255, 0.16), transparent 26%),
+    radial-gradient(circle at 90% 12%, rgba(34, 211, 238, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 105%, rgba(28, 111, 224, 0.16), transparent 32%),
+    linear-gradient(150deg, #04060c 0%, #060a15 46%, #081022 100%) !important;
+}
+
+.flow-shell::before,
+.flow-login-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .5;
+  background-image:
+    linear-gradient(30deg, var(--cyber-line-soft) 12%, transparent 12.5%, transparent 87%, var(--cyber-line-soft) 87.5%, var(--cyber-line-soft)),
+    linear-gradient(150deg, var(--cyber-line-soft) 12%, transparent 12.5%, transparent 87%, var(--cyber-line-soft) 87.5%, var(--cyber-line-soft)),
+    linear-gradient(30deg, var(--cyber-line-soft) 12%, transparent 12.5%, transparent 87%, var(--cyber-line-soft) 87.5%, var(--cyber-line-soft)),
+    linear-gradient(150deg, var(--cyber-line-soft) 12%, transparent 12.5%, transparent 87%, var(--cyber-line-soft) 87.5%, var(--cyber-line-soft)),
+    linear-gradient(60deg, rgba(56,189,248,.05) 25%, transparent 25.5%, transparent 75%, rgba(56,189,248,.05) 75%, rgba(56,189,248,.05)),
+    linear-gradient(60deg, rgba(56,189,248,.05) 25%, transparent 25.5%, transparent 75%, rgba(56,189,248,.05) 75%, rgba(56,189,248,.05));
+  background-size: 84px 146px;
+  background-position: 0 0, 0 0, 42px 73px, 42px 73px, 0 0, 42px 73px;
+  mask-image: radial-gradient(circle at 50% 0%, black, transparent 78%);
+}
+
+.flow-space-grid {
+  opacity: .55 !important;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, .08) 1px, transparent 1px) !important;
+  background-size: 42px 42px !important;
+  mask-image: radial-gradient(circle at center, black, transparent 82%);
+}
+
+.flow-ambient-one,
+.flow-ambient-two,
+.flow-ambient-three { background: #2f8fff !important; opacity: .16 !important; filter: blur(120px) !important; }
+.flow-ambient-two { background: #22d3ee !important; opacity: .1 !important; }
+
+.flow-scrollbar { scrollbar-color: rgba(47, 143, 255, .5) transparent; }
+.flow-scrollbar::-webkit-scrollbar-thumb { background: rgba(47, 143, 255, .5); }
+* { scrollbar-color: rgba(47,143,255,.4) #0a1122; }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: #0a1122; }
+*::-webkit-scrollbar-thumb { background: rgba(47,143,255,.45); border-radius: 999px; border: 2px solid #0a1122; }
+*::-webkit-scrollbar-thumb:hover { background: #22d3ee; }
+
+/* ---------- Header ---------- */
+.flow-topbar {
+  border-bottom: 1px solid var(--cyber-line) !important;
+  background: rgba(6, 10, 20, .88) !important;
+  color: #eaf6ff !important;
+  box-shadow: 0 18px 45px -34px rgba(34, 211, 238, .35) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+}
+.flow-topbar::after { background: linear-gradient(90deg, transparent, rgba(34,211,238,.6), transparent) !important; }
+
+.flow-top-menu-trigger,
+.flow-icon-button,
+.flow-role-pill,
+.flow-header-avatar {
+  border-color: var(--cyber-line) !important;
+  background: linear-gradient(155deg, rgba(13,24,45,.96), rgba(7,12,22,.98)) !important;
+  color: #dff1ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 14px 28px -22px rgba(34,211,238,.3) !important;
+}
+.flow-top-menu-trigger:hover,
+.flow-icon-button:hover {
+  border-color: rgba(34,211,238,.5) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+}
+.flow-top-menu-logo-wrap {
+  background: linear-gradient(145deg, rgba(47,143,255,.22), rgba(34,211,238,.18)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 22px rgba(34,211,238,.2) !important;
+}
+.flow-top-menu-copy small,
+.flow-role-pill,
+.flow-header-date,
+.flow-header-time { color: #7fa3c4 !important; }
+.flow-live-dot { background: #22d3ee !important; box-shadow: 0 0 14px rgba(34,211,238,.75) !important; }
+.flow-kicker { color: #38bdf8 !important; }
+
+/* ---------- Cards / surfaces ---------- */
+.flow-page-stage,
+.flow-marketplace,
+.flow-transfer-page { color: #eaf6ff !important; }
+
+.flow-page-stage [data-slot="card"],
+.flow-ocean-card,
+.flow-admin-catalog-section,
+.flow-orders-section,
+.flow-leaderboard-panel,
+.flow-podium-shell,
+.flow-home-hero,
+.flow-stat-card,
+.flow-product-card,
+.flow-cart-panel,
+.flow-system-message,
+.flow-reward-card,
+.flow-reward-admin-card,
+.flow-redemption-card,
+.flow-leaderboard-row,
+.flow-task-row,
+.flow-notification-panel,
+.flow-history-table,
+.flow-setting-switch,
+.flow-profile-photo-row,
+.flow-transfer-selected,
+.flow-transfer-log,
+.flow-admin-product-list button,
+.flow-login-feature {
+  border-color: var(--cyber-line) !important;
+  background:
+    radial-gradient(circle at 100% 0, rgba(47,143,255,.08), transparent 30%),
+    linear-gradient(155deg, rgba(11,19,36,.97), rgba(6,10,19,.98)) !important;
+  color: #eaf6ff !important;
+  box-shadow: 0 26px 58px -42px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.02) !important;
+}
+
+.flow-page-stage [data-slot="card"]:hover,
+.flow-stat-card:hover,
+.flow-product-card:hover,
+.flow-reward-card:hover,
+.flow-reward-admin-card:hover,
+.flow-task-row:hover {
+  border-color: rgba(34,211,238,.4) !important;
+  box-shadow: 0 26px 50px -30px rgba(34,211,238,.28) !important;
+}
+
+.flow-home-hero {
+  background:
+    radial-gradient(circle at 88% 20%, rgba(34,211,238,.18), transparent 26%),
+    linear-gradient(120deg, #070c17 0%, #0a1428 58%, #0d1e3a 100%) !important;
+}
+.flow-home-hero::before { background: radial-gradient(circle, rgba(34,211,238,.22), transparent 67%) !important; }
+.flow-hero-core::before { background: rgba(10,20,38,.94) !important; box-shadow: 0 0 55px rgba(34,211,238,.28), inset 0 1px 0 rgba(255,255,255,.05) !important; }
+.flow-hero-core-ring { border-color: rgba(56,189,248,.32) !important; }
+
+.flow-page-stage h1, .flow-page-stage h2, .flow-page-stage h3, .flow-page-stage h4, .flow-page-stage label,
+.flow-home-hero h1, .flow-stat-card .text-slate-900,
+.flow-dialog h2, .flow-dialog label, .flow-dialog .text-slate-900,
+.flow-admin-catalog-head h2, .flow-product-content h3, .flow-cart-head h2,
+.flow-notification-head strong, .flow-notification-item strong,
+.flow-leaderboard-panel-head h2, .flow-podium-name, .flow-transfer-selected strong,
+.flow-task-row h3, .flow-history-head th, .flow-setting-switch strong, .flow-profile-photo-row strong {
+  color: #eaf6ff !important;
+}
+
+.flow-page-stage p, .flow-home-hero p,
+.flow-page-stage .text-slate-500, .flow-page-stage .text-slate-600,
+.flow-page-stage .text-gray-500, .flow-page-stage .text-gray-600,
+.flow-dialog p, .flow-dialog .text-slate-500,
+.flow-admin-catalog-head p, .flow-product-content p,
+.flow-notification-head span, .flow-notification-item p,
+.flow-setting-switch span {
+  color: #7fa3c4 !important;
+}
+
+.flow-stat-card .text-blue-700\/70, .flow-home-hero .text-blue-700\/70,
+.flow-marketplace .text-blue-700, .flow-marketplace .text-sky-600 { color: #38bdf8 !important; }
+.flow-stat-icon { border: 1px solid rgba(56,189,248,.28) !important; background: rgba(47,143,255,.12) !important; color: #22d3ee !important; }
+
+/* Os avisos do mural têm cor de texto escolhida pelo usuário — as regras
+   gerais de h1-h4/p acima não podem atropelar isso. (.flow-board-note-paper
+   em si NÃO entra aqui — sua cor real vem de --flow-note-text.) */
+.flow-board-note-paper h1,
+.flow-board-note-paper h2,
+.flow-board-note-paper h3,
+.flow-board-note-paper h4,
+.flow-board-note-paper p,
+.flow-board-note-paper span,
+.flow-board-note-paper small,
+.flow-board-note-paper label,
+.flow-board-note-paper button {
+  color: inherit !important;
+}
+
+/* Neutralize leftover light utility classes from component markup. */
+.flow-shell .bg-white:not(.flow-board-note-paper), .flow-shell .bg-gray-50, .flow-shell .bg-gray-100,
+.flow-shell .bg-slate-50, .flow-shell .bg-slate-100,
+.flow-shell .dark\:bg-\[\#121212\], .flow-shell .dark\:bg-\[\#181818\], .flow-shell .dark\:bg-\[\#0B0B0B\] {
+  background: linear-gradient(155deg, #0d1728, #070c18) !important;
+  color: #eaf6ff !important;
+}
+.flow-shell .bg-gray-200, .flow-shell .bg-slate-200 { background: #12233d !important; }
+.flow-shell .border-gray-200, .flow-shell .border-gray-300, .flow-shell .border-slate-200,
+.flow-shell .dark\:border-\[\#1F1F1F\], .flow-shell .dark\:border-\[\#2A2A2A\] { border-color: var(--cyber-line) !important; }
+.flow-shell .text-gray-900, .flow-shell .text-gray-800, .flow-shell .text-gray-700,
+.flow-shell .text-slate-900, .flow-shell .text-slate-800, .flow-shell .text-slate-700,
+.flow-shell .dark\:text-white { color: #eaf6ff !important; }
+.flow-shell .text-gray-600, .flow-shell .text-gray-500, .flow-shell .text-gray-400,
+.flow-shell .text-slate-600, .flow-shell .text-slate-500, .flow-shell .text-slate-400,
+.flow-shell .dark\:text-\[\#A1A1A1\], .flow-shell .dark\:text-\[\#707070\] { color: #7fa3c4 !important; }
+.flow-shell [class*="text-blue-"], .flow-shell [class*="text-sky-"], .flow-shell [class*="text-cyan-"] { color: #38bdf8 !important; }
+.flow-shell [class*="border-blue-"], .flow-shell [class*="border-sky-"] { border-color: rgba(56,189,248,.3) !important; }
+.flow-shell [class*="bg-blue-50"], .flow-shell [class*="bg-blue-100"] { background: rgba(47,143,255,.12) !important; }
+
+.flow-shell .hover\:bg-gray-50:hover, .flow-shell .hover\:bg-gray-100:hover,
+.flow-shell .hover\:bg-slate-50:hover, .flow-shell .hover\:bg-slate-100:hover {
+  background-color: rgba(34, 211, 238, .08) !important;
+}
+.flow-shell .hover\:text-gray-900:hover { color: #eaf6ff !important; }
+.flow-shell .hover\:border-gray-300:hover, .flow-shell .hover\:border-gray-400:hover { border-color: rgba(56,189,248,.4) !important; }
+
+/* ---------- Forms ---------- */
+.flow-page-stage input, .flow-page-stage textarea, .flow-page-stage select,
+.flow-page-stage [data-slot="select-trigger"], .flow-input, .flow-market-search,
+.flow-dialog input, .flow-dialog textarea, .flow-dialog [data-slot="select-trigger"],
+.flow-login-card input, .flow-emoji-trigger {
+  border-color: var(--cyber-line) !important;
+  background: #0b1526 !important;
+  color: #eaf6ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02) !important;
+}
+.flow-page-stage input:focus, .flow-page-stage textarea:focus, .flow-input:focus, .flow-login-card input:focus {
+  border-color: rgba(34,211,238,.55) !important;
+  box-shadow: 0 0 0 3px rgba(34,211,238,.14) !important;
+}
+.flow-page-stage input::placeholder, .flow-page-stage textarea::placeholder,
+.flow-input::placeholder, .flow-market-search input::placeholder, .flow-login-card input::placeholder { color: #4a6a86 !important; }
+
+/* ---------- Buttons ---------- */
+.flow-primary-button, .flow-cart-button, .flow-cart-checkout, .flow-admin-new-product, .flow-product-add:not(:disabled) {
+  border: 1px solid rgba(34,211,238,.4) !important;
+  background: linear-gradient(180deg, #38a4ff, #1f6fe0) !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 32px -18px rgba(34,211,238,.55) !important;
+}
+.flow-primary-button:hover, .flow-cart-button:hover, .flow-cart-checkout:hover, .flow-admin-new-product:hover, .flow-product-add:hover:not(:disabled) {
+  filter: brightness(1.1);
+  border-color: rgba(34,211,238,.7) !important;
+}
+.flow-secondary-button, .flow-upload-button, .flow-admin-edit-product {
+  border: 1px solid var(--cyber-line) !important;
+  background: #0d1830 !important;
+  color: #dff1ff !important;
+}
+.flow-secondary-button:hover, .flow-upload-button:hover, .flow-admin-edit-product:hover {
+  border-color: rgba(34,211,238,.5) !important;
+  color: #ffffff !important;
+  background: #12233d !important;
+}
+
+/* ---------- Dialogs ---------- */
+.flow-dialog, [data-slot="dialog-content"], [data-slot="select-content"],
+[data-radix-popper-content-wrapper] [role="listbox"], .flow-emoji-popover {
+  border-color: rgba(56,189,248,.28) !important;
+  background:
+    radial-gradient(circle at 100% 0, rgba(34,211,238,.1), transparent 28%),
+    linear-gradient(155deg, #0a1122, #050810) !important;
+  color: #eaf6ff !important;
+  box-shadow: 0 40px 100px -45px rgba(0,0,0,.9) !important;
+}
+.flow-dialog-sticky-footer { border-top-color: var(--cyber-line) !important; background: rgba(6,10,20,.96) !important; }
+.flow-task-edit-actions {
+  background: linear-gradient(180deg, transparent 0%, rgba(9,14,26,.92) 32%, rgba(9,14,26,.98) 62%) !important;
+}
+[data-slot="select-item"] { color: #eaf6ff !important; }
+[data-slot="select-item"]:focus, [data-slot="select-item"][data-highlighted] { background: rgba(34,211,238,.14) !important; color: #22d3ee !important; }
+
+/* ---------- Login / Register ---------- */
+.flow-login-shell::before { z-index: 1; }
+.flow-login-card {
+  border: 1px solid rgba(56,189,248,.24) !important;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(34,211,238,.12), transparent 26%),
+    linear-gradient(155deg, #0a1224, #050810) !important;
+  color: #eaf6ff !important;
+  box-shadow: 0 40px 100px -50px rgba(0,0,0,.9), 0 0 60px -32px rgba(34,211,238,.35) !important;
+}
+.flow-login-card-line { background: linear-gradient(90deg, transparent, #2f8fff 26%, #22d3ee 50%, #2f8fff 74%, transparent) !important; box-shadow: 0 0 20px rgba(34,211,238,.5) !important; }
+.flow-login-logo { border: 1px solid rgba(56,189,248,.3) !important; background: linear-gradient(145deg, #0d1830, #070c18) !important; box-shadow: 0 0 40px rgba(34,211,238,.22) !important; }
+.flow-login-orbit { border-color: rgba(56,189,248,.32) !important; }
+.flow-login-feature:hover { border-color: rgba(34,211,238,.4) !important; }
+
+/* ---------- Radial menu ---------- */
+.flow-radial-overlay {
+  background: radial-gradient(circle at center, rgba(10,25,45,.7), rgba(3,7,14,.94) 58%, rgba(2,5,10,.98)) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+}
+.flow-radial-wheel {
+  border-color: rgba(56,189,248,.26) !important;
+  background:
+    radial-gradient(circle at center, #070c17 0 23%, transparent 23.5%),
+    repeating-conic-gradient(from -90deg, rgba(34,211,238,.12) 0 1deg, transparent 1deg 36deg),
+    radial-gradient(circle at center, #0d1830 0 48%, #050810 72%) !important;
+  box-shadow: 0 55px 110px -55px rgba(0,0,0,.9), inset 0 0 90px rgba(0,0,0,.6), inset 0 0 0 28px rgba(6,11,22,.6) !important;
+}
+.flow-radial-wheel::before { border-color: rgba(56,189,248,.14) !important; box-shadow: inset 0 0 45px rgba(34,211,238,.08) !important; }
+.flow-radial-wheel::after { border-color: rgba(56,189,248,.22) !important; background: radial-gradient(circle, rgba(16,45,71,.3), rgba(1,5,9,.9)) !important; box-shadow: 0 0 40px rgba(34,211,238,.16), inset 0 0 26px rgba(0,0,0,.75) !important; }
+.flow-radial-item {
+  border-color: rgba(56,189,248,.16) !important;
+  background: linear-gradient(155deg, rgba(13,24,45,.96), rgba(7,12,22,.98)) !important;
+  color: #a9c8de !important;
+}
+.flow-radial-item:hover, .flow-radial-item.is-active {
+  border-color: rgba(34,211,238,.65) !important;
+  background: linear-gradient(155deg, #38a4ff, #1c6fe0) !important;
+  color: #ffffff !important;
+  box-shadow: 0 20px 40px -20px rgba(34,211,238,.55) !important;
+}
+.flow-radial-core { background: radial-gradient(circle at 38% 28%, #12233d, #070c18 62%, #030509) !important; border-color: rgba(56,189,248,.24) !important; color: #eaf6ff !important; }
+.flow-radial-core-logo { background: linear-gradient(145deg, #0d1830, #070c18) !important; box-shadow: 0 0 40px rgba(34,211,238,.2), inset 0 1px 0 rgba(255,255,255,.04) !important; }
+.flow-radial-core-orbit { border-color: rgba(56,189,248,.24) !important; }
+.flow-radial-help, .flow-radial-core .text-blue-300\/70 { color: #6f93b3 !important; }
+.flow-radial-help kbd { border-color: rgba(56,189,248,.2) !important; background: rgba(10,18,34,.8) !important; color: #9fc7e0 !important; }
+.flow-radial-close { border-color: rgba(56,189,248,.2) !important; background: #0d1830 !important; color: #a9c8de !important; }
+.flow-radial-close:hover { border-color: rgba(34,211,238,.5) !important; color: #ffffff !important; }
+.flow-radial-trigger { border-color: rgba(56,189,248,.3) !important; box-shadow: 0 18px 45px -22px rgba(34,211,238,.5) !important; }
+
+/* ---------- Notifications ---------- */
+.flow-notification-count { border-color: #060912 !important; background: #22d3ee !important; color: #04101f !important; }
+.flow-notification-item.is-unread { background: rgba(34,211,238,.06) !important; }
+.flow-notification-item.is-unread .flow-notification-dot { background: #22d3ee !important; box-shadow: 0 0 12px rgba(34,211,238,.7) !important; }
+.flow-notification-empty { color: #6f93b3 !important; }
+
+/* ---------- Marketplace / rewards ---------- */
+.flow-wallet-pill { background: linear-gradient(145deg, rgba(13,24,45,.96), rgba(7,12,22,.98)) !important; color: #22d3ee !important; }
+.flow-wallet-pill strong { color: #eaf6ff !important; }
+.flow-market-search { background: #0b1526 !important; }
+.flow-market-search input { color: #eaf6ff !important; }
+.flow-market-empty { background: rgba(10,18,34,.5) !important; color: #7fa3c4 !important; }
+.flow-product-media { background: linear-gradient(145deg, #12233d, #0a1224) !important; }
+.flow-product-placeholder { color: #38bdf8 !important; }
+.flow-product-content h3 { color: #eaf6ff !important; }
+.flow-product-meta strong { color: #38bdf8 !important; }
+.flow-cart-panel { background: linear-gradient(160deg, #0a1224, #050810) !important; }
+.flow-cart-thumb { background: #12233d !important; color: #38bdf8 !important; }
+.flow-cart-item-copy > strong, .flow-cart-item > strong { color: #eaf6ff !important; }
+.flow-cart-qty button { background: #12233d !important; color: #22d3ee !important; }
+.flow-cart-total strong { color: #38bdf8 !important; }
+.flow-order-row { background: linear-gradient(155deg, rgba(11,19,36,.97), rgba(6,10,19,.98)) !important; }
+.flow-order-user img, .flow-order-user > span { background: #12233d !important; color: #38bdf8 !important; }
+.flow-order-user strong { color: #eaf6ff !important; }
+.flow-order-items span { background: #0d1830 !important; color: #9fc7e0 !important; }
+.flow-order-total strong { color: #38bdf8 !important; }
+.flow-order-actions .is-approve, .flow-order-actions .is-delivered { background: rgba(34,211,238,.14) !important; color: #7fe0ff !important; }
+
+/* ---------- Podium / leaderboard ---------- */
+.flow-podium-shell {
+  background:
+    radial-gradient(circle at 50% 15%, rgba(34,211,238,.16), transparent 38%),
+    linear-gradient(145deg, #070c17, #050810 70%) !important;
+}
+.flow-podium-avatar { border-color: rgba(56,189,248,.4) !important; background: #12233d !important; }
+.position-1 .flow-podium-avatar { border-color: #f6d66f !important; }
+.flow-podium-points { color: #38bdf8 !important; }
+.position-1 .flow-podium-points { color: #f6d66f !important; }
+.flow-podium-number { background: #2f8fff !important; color: #ffffff !important; }
+.position-1 .flow-podium-number { background: #f6d66f !important; }
+.flow-podium-base { border-color: var(--cyber-line) !important; background: linear-gradient(180deg, #0d1830, #12233d) !important; color: #38bdf8 !important; }
+.flow-podium-base.base-1 { border-color: rgba(246,214,111,.4) !important; background: linear-gradient(180deg, #3a331a, #1c2233 55%, #0d1830) !important; color: #f6d66f !important; }
+.flow-leaderboard-card { border-color: var(--cyber-line) !important; background: linear-gradient(120deg, #0d1728, #070c18) !important; }
+.flow-leaderboard-card:hover { border-color: rgba(34,211,238,.4) !important; }
+.flow-leaderboard-card.is-top { border-color: rgba(246,214,111,.3) !important; background: linear-gradient(120deg, #2c290f, #0d1728) !important; }
+.flow-leaderboard-place { background: rgba(47,143,255,.14) !important; color: #38bdf8 !important; }
+.flow-leaderboard-avatar { border-color: var(--cyber-line) !important; background: #12233d !important; }
+
+/* ---------- Admin catalog / transfer ---------- */
+.flow-admin-catalog-row:hover { background: rgba(34,211,238,.05) !important; }
+.flow-admin-product-thumb { background: #12233d !important; color: #38bdf8 !important; }
+.flow-admin-product-name strong { color: #eaf6ff !important; }
+.flow-admin-catalog-row .is-active { color: #4ade80 !important; }
+.flow-admin-catalog-row .is-inactive { color: #f87171 !important; }
+.flow-transfer-info, .flow-transfer-empty { background: linear-gradient(90deg, rgba(13,24,45,.6), rgba(7,12,22,.7)) !important; color: #9fc7e0 !important; }
+.flow-transfer-selected-icon { background: #2f8fff !important; color: #ffffff !important; }
+.flow-transfer-selected > span { color: #38bdf8 !important; }
+.flow-transfer-log p span { color: #22d3ee !important; }
+
+/* ---------- Board / chalk ---------- */
+.flow-board-frame { border-color: #1c2a3f !important; background: linear-gradient(145deg, #1a2438, #0a1120) !important; }
+.flow-school-board {
+  background-color: #071022 !important;
+  background-image:
+    radial-gradient(circle at 25% 20%, rgba(34,211,238,.1), transparent 26%),
+    radial-gradient(circle at 75% 62%, rgba(47,143,255,.1), transparent 26%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 5px),
+    linear-gradient(145deg, #0a1428, #071022 45%, #050c1a) !important;
+}
+.flow-board-title { color: rgba(234,246,255,.55) !important; }
+.flow-note-action { border-color: rgba(56,189,248,.2) !important; background: rgba(10,18,34,.85) !important; color: #eaf6ff !important; }
+.flow-note-action:hover { background: #2f8fff !important; color: #ffffff !important; }
+.flow-chalk-corner .flow-board-eraser, .flow-real-chalk { background: rgba(10,18,34,.9) !important; border-color: var(--cyber-line) !important; color: #22d3ee !important; }
+.flow-real-chalk.is-active { background: linear-gradient(180deg, #38a4ff, #1f6fe0) !important; color: #ffffff !important; }
+.flow-emoji-library { background: rgba(10,18,34,.7) !important; border-color: var(--cyber-line) !important; }
+.flow-emoji-chip { background: #0d1830 !important; border-color: var(--cyber-line) !important; }
+.flow-emoji-chip:hover, .flow-emoji-chip.is-selected { background: rgba(34,211,238,.14) !important; border-color: rgba(34,211,238,.45) !important; }
+
+/* ---------- Route sweep ---------- */
+.flow-route-transition {
+  background: linear-gradient(105deg, transparent 0%, rgba(34,211,238,.06) 38%, rgba(34,211,238,.22) 50%, rgba(34,211,238,.06) 62%, transparent 100%) !important;
+}
+
+.flow-footer { border-top-color: var(--cyber-line) !important; background: rgba(4,7,14,.8) !important; color: rgba(127,163,196,.6) !important; }

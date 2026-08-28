@@ -1,0 +1,530 @@
+/* FLOW V6.3 — palette preto + verde neon baseada nas referências enviadas */
+:root,
+.dark {
+  --background: #060907;
+  --foreground: #f4f7f4;
+  --card: #0b100d;
+  --card-foreground: #f4f7f4;
+  --popover: #0a0f0c;
+  --popover-foreground: #f4f7f4;
+  --primary: #39ff14;
+  --primary-foreground: #061008;
+  --secondary: #111a14;
+  --secondary-foreground: #eaf5ec;
+  --muted: #101713;
+  --muted-foreground: #99aa9d;
+  --accent: #17301d;
+  --accent-foreground: #eff8f0;
+  --border: rgba(73, 255, 99, .15);
+  --input: rgba(73, 255, 99, .18);
+  --input-background: #0c1510;
+  --ring: #39ff14;
+  --ocean-bg: #060907;
+  --ocean-bg-2: #09110c;
+  --ocean-card: #0b120e;
+  --ocean-card-2: #112018;
+  --ocean-line: rgba(73,255,99,.16);
+  --ocean-text: #f5f8f5;
+  --ocean-muted: #9caea0;
+  --ocean-cyan: #39ff14;
+  --ocean-blue: #1eca68;
+  --ocean-teal: #2fe66f;
+  --ocean-gold: #f6d66f;
+}
+
+html,
+body {
+  background: #060907 !important;
+  color: #f5f8f5 !important;
+}
+
+.flow-shell,
+.flow-login-shell {
+  background:
+    radial-gradient(circle at 12% 3%, rgba(57,255,20,.10), transparent 26%),
+    radial-gradient(circle at 86% 15%, rgba(40,222,103,.07), transparent 22%),
+    linear-gradient(150deg, #050806 0%, #07100a 48%, #09140d 100%) !important;
+}
+
+.flow-space-grid {
+  opacity: .18 !important;
+  background-image:
+    linear-gradient(rgba(57,255,20,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,255,20,.08) 1px, transparent 1px) !important;
+  background-size: 68px 68px !important;
+}
+
+.flow-ambient-one,
+.flow-ambient-two,
+.flow-ambient-three {
+  background: rgba(57,255,20,.08) !important;
+}
+
+/* Header */
+.flow-topbar {
+  height: 76px !important;
+  border-bottom: 1px solid rgba(57,255,20,.18) !important;
+  background: linear-gradient(90deg, rgba(5,9,6,.98), rgba(9,19,12,.97) 58%, rgba(8,16,10,.98)) !important;
+  color: #f6faf6 !important;
+  box-shadow: 0 16px 42px -28px rgba(57,255,20,.22) !important;
+}
+.flow-topbar::after {
+  background: linear-gradient(90deg, transparent, rgba(57,255,20,.58), transparent) !important;
+}
+.flow-top-menu-trigger,
+.flow-icon-button,
+.flow-role-pill,
+.flow-header-avatar {
+  border-color: rgba(57,255,20,.16) !important;
+  background: linear-gradient(155deg, rgba(15,27,18,.98), rgba(7,13,9,.99)) !important;
+  color: #f1f7f2 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 14px 28px -24px rgba(57,255,20,.24) !important;
+}
+.flow-top-menu-trigger:hover,
+.flow-icon-button:hover {
+  border-color: rgba(57,255,20,.38) !important;
+  color: #74ff84 !important;
+}
+.flow-top-menu-logo-wrap {
+  background: linear-gradient(145deg, rgba(57,255,20,.16), rgba(24,128,57,.14)) !important;
+}
+.flow-top-menu-copy small,
+.flow-role-pill { color: #93ad98 !important; }
+.flow-live-dot {
+  background: #39ff14 !important;
+  box-shadow: 0 0 16px rgba(57,255,20,.7) !important;
+}
+.flow-top-menu-logo,
+.flow-hero-core img,
+.flow-radial-core-logo img,
+.flow-login-logo img {
+  filter: grayscale(1) brightness(1.35) sepia(1) saturate(4) hue-rotate(72deg) !important;
+}
+
+/* Main background and general cards */
+.flow-page-stage > div,
+.flow-marketplace,
+.flow-transfer-page {
+  color: #f5f8f5 !important;
+}
+.flow-page-stage [data-slot="card"],
+.flow-ocean-card,
+.flow-admin-catalog-section,
+.flow-podium-shell,
+.flow-orders-section,
+.flow-leaderboard-panel,
+.flow-home-hero,
+.flow-stat-card {
+  border-color: rgba(57,255,20,.13) !important;
+  background:
+    radial-gradient(circle at 100% 0, rgba(57,255,20,.055), transparent 30%),
+    linear-gradient(155deg, rgba(11,18,13,.98), rgba(7,12,9,.99) 70%, rgba(11,22,14,.98)) !important;
+  color: #f5f8f5 !important;
+  box-shadow: 0 26px 58px -42px rgba(0,0,0,.88), inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+.flow-page-stage [data-slot="card"]:hover,
+.flow-stat-card:hover {
+  border-color: rgba(57,255,20,.25) !important;
+  box-shadow: 0 30px 64px -44px rgba(57,255,20,.13), inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+.flow-home-hero {
+  background:
+    radial-gradient(circle at 88% 20%, rgba(57,255,20,.12), transparent 27%),
+    linear-gradient(120deg, #060b07 0%, #08130b 58%, #0b2112 100%) !important;
+}
+.flow-home-hero h1,
+.flow-home-hero .text-slate-900,
+.flow-stat-card .text-slate-900,
+.flow-page-stage h1,
+.flow-page-stage h2,
+.flow-page-stage h3,
+.flow-page-stage h4,
+.flow-page-stage label,
+.flow-dialog h2,
+.flow-dialog label,
+.flow-dialog .text-slate-900 {
+  color: #f5f8f5 !important;
+}
+.flow-home-hero p,
+.flow-page-stage p,
+.flow-page-stage .text-slate-500,
+.flow-page-stage .text-slate-600,
+.flow-page-stage .text-gray-500,
+.flow-page-stage .text-gray-600,
+.flow-dialog p,
+.flow-dialog .text-slate-500 {
+  color: #9caf9f !important;
+}
+.flow-kicker,
+.flow-stat-card .text-blue-700\/70,
+.flow-home-hero .text-blue-700\/70 {
+  color: #76ff8b !important;
+}
+.flow-stat-icon {
+  border: 1px solid rgba(57,255,20,.12) !important;
+  background: rgba(57,255,20,.08) !important;
+  color: #66ff7c !important;
+}
+
+/* Form fields */
+.flow-page-stage input,
+.flow-page-stage textarea,
+.flow-page-stage select,
+.flow-page-stage [data-slot="select-trigger"],
+.flow-input,
+.flow-market-search,
+.flow-dialog input,
+.flow-dialog textarea,
+.flow-dialog [data-slot="select-trigger"] {
+  border-color: rgba(57,255,20,.15) !important;
+  background: linear-gradient(180deg, #0d1610, #0a110d) !important;
+  color: #f4f7f4 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+.flow-page-stage input:focus,
+.flow-page-stage textarea:focus,
+.flow-input:focus {
+  border-color: rgba(57,255,20,.45) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,.08) !important;
+}
+.flow-page-stage input::placeholder,
+.flow-page-stage textarea::placeholder,
+.flow-input::placeholder,
+.flow-market-search input::placeholder { color: #637468 !important; }
+
+/* Buttons */
+.flow-primary-button,
+.flow-cart-button,
+.flow-cart-checkout,
+.flow-admin-new-product,
+.flow-product-add:not(:disabled) {
+  border-color: rgba(122,255,144,.22) !important;
+  background: linear-gradient(180deg, #4fff71, #20ca58) !important;
+  color: #061008 !important;
+  box-shadow: 0 18px 34px -22px rgba(57,255,20,.42) !important;
+}
+.flow-primary-button:hover,
+.flow-cart-button:hover,
+.flow-cart-checkout:hover,
+.flow-admin-new-product:hover,
+.flow-product-add:hover:not(:disabled) {
+  filter: brightness(1.045) !important;
+  transform: translateY(-1px) !important;
+}
+.flow-secondary-button,
+.flow-upload-button,
+.flow-admin-edit-product {
+  border-color: rgba(57,255,20,.16) !important;
+  background: linear-gradient(180deg, #111c14, #0a120d) !important;
+  color: #e9f4eb !important;
+}
+.flow-secondary-button:hover,
+.flow-upload-button:hover,
+.flow-admin-edit-product:hover {
+  border-color: rgba(57,255,20,.34) !important;
+  color: #77ff8b !important;
+}
+
+/* Dialogs */
+.flow-dialog {
+  border-color: rgba(57,255,20,.18) !important;
+  background:
+    radial-gradient(circle at 100% 0, rgba(57,255,20,.07), transparent 28%),
+    linear-gradient(155deg, #0c150f, #070c09) !important;
+  color: #f5f8f5 !important;
+  box-shadow: 0 50px 110px -56px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+.flow-dialog-sticky-footer {
+  border-top-color: rgba(57,255,20,.12) !important;
+  background: rgba(6,12,8,.96) !important;
+}
+
+/* Radial menu */
+.flow-radial-overlay {
+  background: radial-gradient(circle at center, rgba(20,58,29,.62), rgba(3,7,4,.93) 58%, rgba(2,4,3,.98)) !important;
+  backdrop-filter: blur(17px) saturate(120%) !important;
+}
+.flow-radial-wheel {
+  border-color: rgba(57,255,20,.20) !important;
+  background:
+    radial-gradient(circle at center, #071009 0 23%, transparent 23.5%),
+    repeating-conic-gradient(from -90deg, rgba(57,255,20,.11) 0 1deg, transparent 1deg 36deg),
+    radial-gradient(circle at center, #112117 0 48%, #050906 72%) !important;
+  box-shadow: 0 44px 100px -50px rgba(0,0,0,.94), inset 0 0 100px rgba(0,0,0,.58), inset 0 0 0 28px rgba(5,12,7,.48) !important;
+}
+.flow-radial-item {
+  border-color: rgba(57,255,20,.17) !important;
+  background: linear-gradient(155deg, rgba(18,34,23,.98), rgba(7,14,9,.99)) !important;
+  color: #a9bdad !important;
+}
+.flow-radial-item:hover,
+.flow-radial-item.is-active {
+  border-color: rgba(96,255,118,.55) !important;
+  background: linear-gradient(155deg, #39ff14, #17a74b) !important;
+  color: #061008 !important;
+  box-shadow: 0 22px 42px -24px rgba(57,255,20,.45) !important;
+}
+.flow-radial-core {
+  border-color: rgba(57,255,20,.18) !important;
+  background: radial-gradient(circle at 38% 28%, #183222, #0a160e 62%, #050906) !important;
+  color: #f0f7f1 !important;
+}
+.flow-radial-core .text-blue-300\/70,
+.flow-radial-help { color: #7ea986 !important; }
+.flow-radial-close {
+  border-color: rgba(57,255,20,.16) !important;
+  background: #101b13 !important;
+  color: #dcf3e0 !important;
+}
+
+/* Notifications */
+.flow-notification-count {
+  border-color: #060907 !important;
+  background: #39ff14 !important;
+  color: #061008 !important;
+}
+.flow-notification-panel {
+  border-color: rgba(57,255,20,.17) !important;
+  background: linear-gradient(155deg,#0c160f,#070c09) !important;
+}
+.flow-notification-head { border-bottom-color: rgba(57,255,20,.10) !important; }
+.flow-notification-head strong,
+.flow-notification-item strong { color: #f3f8f4 !important; }
+.flow-notification-head span,
+.flow-notification-item p,
+.flow-notification-item small { color: #91a797 !important; }
+.flow-notification-head button,
+.flow-notification-item.is-unread .flow-notification-dot { color: #62ff7a !important; }
+.flow-notification-item.is-unread { background: rgba(57,255,20,.045) !important; }
+.flow-notification-item.is-unread .flow-notification-dot {
+  background: #39ff14 !important;
+  box-shadow: 0 0 12px rgba(57,255,20,.6) !important;
+}
+
+/* Blackboard: strong real texture + readable notes */
+.flow-board-frame {
+  border: 16px solid #70441f !important;
+  border-radius: 28px !important;
+  background: linear-gradient(145deg, #9e6735, #5c3316) !important;
+  box-shadow: 0 42px 84px -48px rgba(0,0,0,.92), inset 0 0 0 2px rgba(255,224,177,.12) !important;
+}
+.flow-school-board {
+  position: relative !important;
+  overflow: hidden !important;
+  border: 6px solid rgba(38,24,10,.40) !important;
+  background-color: #10361d !important;
+  background-image:
+    linear-gradient(rgba(11,45,23,.18), rgba(11,45,23,.18)),
+    url('/chalkboard-texture.png'),
+    radial-gradient(circle at 22% 20%, rgba(90,255,110,.09), transparent 24%),
+    linear-gradient(145deg,#143f22,#0f331b 52%,#0b2916) !important;
+  background-repeat: repeat, repeat, no-repeat, no-repeat !important;
+  background-size: auto, 740px 740px, auto, auto !important;
+  background-blend-mode: multiply, screen, screen, normal !important;
+  box-shadow: inset 0 0 140px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.035) !important;
+}
+.flow-board-chalk-lines {
+  opacity: .85 !important;
+  background:
+    repeating-linear-gradient(8deg, transparent 0 120px, rgba(246,250,246,.038) 120px 122px, transparent 122px 220px),
+    radial-gradient(ellipse at 35% 28%, rgba(255,255,255,.06), transparent 16%),
+    radial-gradient(ellipse at 72% 70%, rgba(255,255,255,.045), transparent 18%) !important;
+}
+.flow-board-title {
+  color: rgba(239,247,240,.77) !important;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35) !important;
+}
+.flow-board-note-paper {
+  --flow-note-text: #101719;
+  color: var(--flow-note-text) !important;
+  border: 1px solid rgba(12,20,14,.16) !important;
+  box-shadow: 0 24px 38px -28px rgba(0,0,0,.48), 0 12px 22px -18px rgba(0,0,0,.26) !important;
+}
+.flow-board-note-paper h3,
+.flow-board-note-paper p,
+.flow-board-note-paper span:not(.flow-board-pin),
+.flow-board-note-paper small,
+.flow-board-note-paper svg:not(.flow-note-action svg) {
+  color: var(--flow-note-text) !important;
+}
+.flow-board-note-paper p { opacity: .94 !important; }
+.flow-board-note-paper .opacity-40 { opacity: .72 !important; }
+.flow-board-note-paper .opacity-55 { opacity: .80 !important; }
+
+.flow-paper-ice { background: linear-gradient(180deg, #f3f6f1, #dce5db) !important; }
+.flow-paper-sky { background: linear-gradient(180deg, #e2e9e8, #ccd7d5) !important; }
+.flow-paper-mint { background: linear-gradient(180deg, #dbe8d7, #c6d7c1) !important; }
+.flow-paper-peach { background: linear-gradient(180deg, #eee0cf, #d9c3ad) !important; }
+.flow-paper-lemon { background: linear-gradient(180deg, #e5ddb1, #d2c894) !important; }
+.flow-paper-lilac { background: linear-gradient(180deg, #dfe2e6, #cbd0d4) !important; }
+.flow-paper-rose { background: linear-gradient(180deg, #e6d8d8, #d0c2c2) !important; }
+.flow-paper-sand { background: linear-gradient(180deg, #e5d6b9, #cfbb95) !important; }
+.flow-paper-blue { background: linear-gradient(180deg, #9aabb0, #7f9398) !important; }
+.flow-paper-cobalt { background: linear-gradient(180deg, #27422f, #17291d) !important; }
+.flow-paper-midnight { background: linear-gradient(180deg, #161b18, #0e1210) !important; }
+
+.flow-board-note-paper .flow-note-action {
+  opacity: 1 !important;
+  border: 1px solid rgba(8,16,10,.13) !important;
+  background: rgba(248,250,248,.92) !important;
+  color: #0d1710 !important;
+  box-shadow: 0 8px 16px -12px rgba(0,0,0,.42) !important;
+}
+.flow-board-note-paper .flow-note-action svg { color: #0d1710 !important; }
+.flow-board-note-paper .flow-note-action:hover {
+  background: linear-gradient(180deg,#5cff77,#23c957) !important;
+  color: #061008 !important;
+}
+
+.flow-paper-choice {
+  border-color: rgba(57,255,20,.12) !important;
+  background: #0c140f !important;
+  color: #aab9ad !important;
+}
+.flow-paper-choice:hover,
+.flow-paper-choice.is-selected {
+  border-color: rgba(57,255,20,.40) !important;
+  background: rgba(57,255,20,.08) !important;
+  color: #ecf7ee !important;
+}
+.flow-text-color-choice,
+.flow-custom-color {
+  border-color: rgba(57,255,20,.12) !important;
+  background: #0b130e !important;
+  color: #b4c0b6 !important;
+}
+.flow-text-color-choice.is-selected {
+  border-color: rgba(57,255,20,.42) !important;
+  box-shadow: 0 0 0 2px rgba(57,255,20,.08) !important;
+}
+
+/* Marketplace */
+.flow-wallet-pill,
+.flow-market-search,
+.flow-product-card,
+.flow-order-row,
+.flow-cart-panel,
+.flow-cart-head > button,
+.flow-cart-thumb,
+.flow-cart-qty button,
+.flow-admin-catalog-row,
+.flow-admin-product-thumb,
+.flow-setting-switch {
+  border-color: rgba(57,255,20,.13) !important;
+  background: linear-gradient(155deg, #101a13, #080e0a) !important;
+  color: #eef5ef !important;
+}
+.flow-wallet-pill { color: #64ff7a !important; }
+.flow-wallet-pill span,
+.flow-product-meta span,
+.flow-order-user small,
+.flow-admin-cell-label { color: #86a28c !important; }
+.flow-product-content h3,
+.flow-order-user strong,
+.flow-admin-product-name strong,
+.flow-cart-item-copy > strong,
+.flow-cart-item > strong { color: #f1f7f2 !important; }
+.flow-product-content p,
+.flow-order-items span,
+.flow-admin-product-name small,
+.flow-cart-item-copy > span { color: #93a998 !important; }
+.flow-product-meta strong,
+.flow-cart-total strong { color: #68ff7f !important; }
+.flow-product-media,
+.flow-product-placeholder {
+  background: linear-gradient(145deg, #15231a, #0a100c) !important;
+  color: #4fff6e !important;
+}
+.flow-order-items span { background: #0e1811 !important; border-color: rgba(57,255,20,.10) !important; }
+
+/* Podium + full classification */
+.flow-podium-shell {
+  min-height: 430px !important;
+  border-color: rgba(57,255,20,.16) !important;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(57,255,20,.13), transparent 34%),
+    linear-gradient(160deg,#070c09,#0b1510 64%,#102318) !important;
+}
+.flow-podium-shell::before {
+  background:
+    linear-gradient(rgba(57,255,20,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,255,20,.045) 1px, transparent 1px) !important;
+  background-size: 52px 52px !important;
+}
+.flow-podium-glow { background: rgba(57,255,20,.12) !important; }
+.flow-podium-avatar { border-color: rgba(82,255,105,.34) !important; background: #101c13 !important; }
+.position-1 .flow-podium-avatar { border-color: #f6dc83 !important; }
+.flow-podium-name { color: #f4f8f4 !important; }
+.flow-podium-points { color: #78ff8c !important; }
+.position-1 .flow-podium-points { color: #f7df8a !important; }
+.flow-podium-number { border-color: #070c09 !important; background: #39ff14 !important; color: #071009 !important; }
+.position-1 .flow-podium-number { background: #f6dc83 !important; }
+.flow-podium-base { border-color: rgba(57,255,20,.14) !important; background: linear-gradient(180deg,#13291a,#0a150e) !important; color: #73ff88 !important; }
+.flow-podium-base.base-1 { border-color: rgba(246,220,131,.20) !important; background: linear-gradient(180deg,#4c421d,#251f0f 55%,#0d1710) !important; color: #f6dc83 !important; }
+.flow-podium-crown { color: #f6dc83 !important; }
+.flow-podium-aura,
+.flow-leaderboard-aura {
+  border-color: rgba(246,220,131,.68) !important;
+  box-shadow: 0 0 0 7px rgba(246,220,131,.08), 0 0 30px rgba(246,220,131,.28), 0 0 60px rgba(57,255,20,.24) !important;
+}
+.position-1:hover .flow-podium-aura,
+.flow-leaderboard-card.is-top:hover .flow-leaderboard-aura {
+  animation: flowMaxAura 850ms ease-in-out infinite alternate !important;
+}
+@keyframes flowMaxAura {
+  from { transform: scale(.93); opacity: .65; filter: blur(0); }
+  to { transform: scale(1.15); opacity: 1; filter: blur(.6px); box-shadow: 0 0 0 12px rgba(246,220,131,.09), 0 0 46px rgba(246,220,131,.45), 0 0 88px rgba(57,255,20,.40); }
+}
+.flow-podium-hovercard,
+.flow-leaderboard-hovercard {
+  border-color: rgba(57,255,20,.16) !important;
+  background: rgba(5,10,7,.98) !important;
+}
+.flow-podium-hovercard b,
+.flow-leaderboard-hovercard b { color: #72ff87 !important; }
+.flow-podium-hovercard span,
+.flow-leaderboard-hovercard span { color: #eaf4ec !important; }
+
+.flow-leaderboard-panel {
+  border-color: rgba(57,255,20,.13) !important;
+  background: linear-gradient(155deg,#0b130e,#070c09) !important;
+}
+.flow-leaderboard-panel-head h2,
+.flow-leaderboard-copy strong,
+.flow-leaderboard-score strong { color: #f4f8f4 !important; }
+.flow-leaderboard-panel-head > span,
+.flow-leaderboard-copy small,
+.flow-leaderboard-score span { color: #88a68d !important; }
+.flow-leaderboard-card {
+  border-color: rgba(57,255,20,.11) !important;
+  background: linear-gradient(120deg,#0e1811,#080e0a) !important;
+}
+.flow-leaderboard-card:hover {
+  border-color: rgba(57,255,20,.27) !important;
+  box-shadow: 0 18px 38px -28px rgba(57,255,20,.15) !important;
+}
+.flow-leaderboard-card.is-top {
+  border-color: rgba(246,220,131,.18) !important;
+  background: linear-gradient(120deg,#1c1c0d,#0d160e) !important;
+}
+.flow-leaderboard-place { background: rgba(57,255,20,.10) !important; color: #72ff86 !important; }
+.flow-leaderboard-card.is-top .flow-leaderboard-place { background: rgba(246,220,131,.12) !important; color: #f6dc83 !important; }
+.flow-leaderboard-avatar { border-color: rgba(57,255,20,.15) !important; background: #101c13 !important; }
+
+/* Login */
+.flow-login-card,
+.flow-login-feature {
+  border-color: rgba(57,255,20,.14) !important;
+  background: linear-gradient(155deg,#0e1711,#070d09) !important;
+  color: #f4f8f4 !important;
+}
+.flow-login-card-line { background: linear-gradient(90deg, transparent, #39ff14, transparent) !important; }
+.flow-login-orbit { border-color: rgba(57,255,20,.20) !important; }
+
+/* Footer */
+.flow-footer {
+  border-top-color: rgba(57,255,20,.08) !important;
+  background: #050806 !important;
+  color: rgba(143,164,148,.46) !important;
+}

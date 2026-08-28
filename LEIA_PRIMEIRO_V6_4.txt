@@ -1,0 +1,14 @@
+FLOW V6.4 - PALETA REFERENCIA
+
+Esta versao aplica ao projeto real a identidade visual do App.jsx de referencia enviado:
+#050706 #080B09 #101512 #141A16 #17612F #20C95A #39FF14 #E7ECE8 #A6B0A8 #515A53
+Dourado #FFD86A apenas para destaques premium / podio.
+
+Inclui a mesma identidade no Login e Cadastro.
+Nao ha migration nova do Supabase nesta versao.
+A logica do projeto nao foi alterada por esta troca visual.
+
+Para rodar:
+1. mantenha seu arquivo .env com as configuracoes do Supabase
+2. npm install
+3. npm run dev

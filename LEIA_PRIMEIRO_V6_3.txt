@@ -1,0 +1,8 @@
+FLOW V6.3 — PALETA VERDE/PRETO
+
+1. Extraia a pasta.
+2. Crie/mande seu .env com VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.
+3. Rode: npm install
+4. Rode: npm run dev
+
+Esta versão não exige SQL novo em relação ao banco que já está configurado.
