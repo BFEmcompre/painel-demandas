@@ -29,6 +29,7 @@ async function getImagePart(url: string) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Falha ao carregar print (${response.status})`);
   const mimeType = (response.headers.get("content-type") || "image/jpeg").split(";")[0];
+  if (!mimeType.startsWith("image/")) throw new Error(`Print retornou tipo inválido (${mimeType})`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   return { inlineData: { mimeType, data: toBase64(bytes) } };
 }
@@ -48,7 +49,7 @@ Deno.serve(async (req) => {
     });
 
     const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData.user) throw new Error("Usuário não autenticado");
+    if (userError || !userData.user) throw new Error(`Usuário não autenticado${userError?.message ? `: ${userError.message}` : ""}`);
 
     const body = await req.json();
     const submissionId = String(body.submission_id || "");
@@ -59,17 +60,29 @@ Deno.serve(async (req) => {
       .select("id,platform_id,reference_date")
       .eq("id", submissionId)
       .single();
-    if (submissionError || !submission) throw new Error("Envio não encontrado");
+    if (submissionError || !submission) throw new Error(`Envio não encontrado${submissionError?.message ? `: ${submissionError.message}` : ""}`);
 
-    const [{ data: platform }, { data: images }, { data: existingMetrics }] = await Promise.all([
+    const [platformResult, imagesResult, metricsResult] = await Promise.all([
       supabase.from("platforms").select("id,name").eq("id", submission.platform_id).single(),
       supabase.from("indicator_submission_images").select("id,image_url,display_order").eq("submission_id", submissionId).order("display_order"),
       supabase.from("indicator_definitions").select("id,name,unit,metric_key,source_section,display_order").eq("platform_id", submission.platform_id).eq("active", true).order("display_order"),
     ]);
 
+    if (platformResult.error) throw new Error(`Falha ao ler plataforma: ${platformResult.error.message}`);
+    if (imagesResult.error) throw new Error(`Falha ao ler prints: ${imagesResult.error.message}`);
+    if (metricsResult.error) throw new Error(`Falha ao ler indicadores: ${metricsResult.error.message}`);
+
+    const platform = platformResult.data;
+    const images = imagesResult.data;
+    const existingMetrics = metricsResult.data;
+
     if (!images?.length) throw new Error("Nenhum print anexado");
 
-    await supabase.from("indicator_submissions").update({ status: "extracting" }).eq("id", submissionId);
+    const { error: extractingError } = await supabase
+      .from("indicator_submissions")
+      .update({ status: "extracting" })
+      .eq("id", submissionId);
+    if (extractingError) throw new Error(`Falha ao iniciar extração: ${extractingError.message}`);
 
     const known = (existingMetrics || []).map((m: any) => ({
       name: m.name,
@@ -164,7 +177,7 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
           })
           .select("id,name,unit,metric_key,source_section,display_order")
           .single();
-        if (error) throw error;
+        if (error) throw new Error(`Falha ao salvar indicador "${name}": ${error.message}`);
         definition = created;
       }
 
@@ -184,27 +197,32 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
     if (!discovered.length) warnings.push("O Gemini analisou os prints, mas não encontrou indicadores numéricos confiáveis.");
 
     for (const image of images) {
-      await supabase.from("indicator_submission_images").update({
+      const { error } = await supabase.from("indicator_submission_images").update({
         extraction_status: "processed",
         extraction_json: { provider: "gemini", model, extracted_metrics: discovered.length },
       }).eq("id", image.id);
+      if (error) throw new Error(`Falha ao registrar leitura do print: ${error.message}`);
     }
 
-    await supabase.from("indicator_submissions").update({
+    const { error: finishError } = await supabase.from("indicator_submissions").update({
       status: "extracted",
       extracted_at: new Date().toISOString(),
       extraction_warnings: warnings,
     }).eq("id", submissionId);
+    if (finishError) throw new Error(`Falha ao finalizar extração: ${finishError.message}`);
 
-    return new Response(JSON.stringify({ metrics: discovered, warnings, provider: "gemini", model }), {
+    return new Response(JSON.stringify({ ok: true, metrics: discovered, warnings, provider: "gemini", model }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("extract-indicators:", message);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 400,
+
+    // Durante a fase de integração, devolvemos 200 com ok=false para o supabase-js
+    // não substituir o corpo útil por "Edge Function returned a non-2xx status code".
+    return new Response(JSON.stringify({ ok: false, error: message }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
