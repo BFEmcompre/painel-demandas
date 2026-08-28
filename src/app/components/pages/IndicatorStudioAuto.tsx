@@ -1,0 +1,143 @@
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Check, FileImage, ImagePlus, Loader2, Presentation, Sparkles, UploadCloud } from 'lucide-react';
+import { Card } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { supabase } from '../../lib/supabase';
+
+type Platform={id:string;name:string;responsible_id:string;responsible_name:string;display_order:number;upload_deadline:string};
+type Metric={id:string;platform_id:string;name:string;unit:string;source_section:string|null;display_order:number};
+type Measurement={indicator_id:string;reference_date:string;value:number};
+type Submission={id:string;platform_id:string;reference_date:string;status:string;is_late:boolean;upload_completed_at:string|null};
+type SubmissionImage={id:string;submission_id:string;image_url:string;storage_path:string|null;original_name:string|null;display_order:number};
+type Extracted={indicator_id:string;name:string;section:string|null;unit:string;found:boolean;value:number|null;confidence:number;raw_text:string};
+
+type Report={id:string};
+
+const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
+function formatValue(value:number|null|undefined,unit:string){if(value===null||value===undefined)return '—';if(unit==='%')return `${Number(value).toLocaleString('pt-BR')}%`;if(unit==='R$')return Number(value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});if(unit==='nota')return Number(value).toLocaleString('pt-BR',{maximumFractionDigits:2});return Number(value).toLocaleString('pt-BR');}
+
+export function IndicatorStudioAuto(){
+  const [params,setParams]=useSearchParams();
+  const [platforms,setPlatforms]=useState<Platform[]>([]);
+  const [metrics,setMetrics]=useState<Metric[]>([]);
+  const [measurements,setMeasurements]=useState<Measurement[]>([]);
+  const [submission,setSubmission]=useState<Submission|null>(null);
+  const [images,setImages]=useState<SubmissionImage[]>([]);
+  const [extracted,setExtracted]=useState<Extracted[]>([]);
+  const [reviewValues,setReviewValues]=useState<Record<string,string>>({});
+  const [warnings,setWarnings]=useState<string[]>([]);
+  const [uploading,setUploading]=useState(false);
+  const [extracting,setExtracting]=useState(false);
+  const [confirming,setConfirming]=useState(false);
+  const date=today();
+
+  const platformId=params.get('platform')||'';
+  const platform=platforms.find(p=>p.id===platformId);
+  const platformMetrics=useMemo(()=>metrics.filter(m=>m.platform_id===platformId).sort((a,b)=>a.display_order-b.display_order),[metrics,platformId]);
+
+  useEffect(()=>{void bootstrap()},[]);
+  useEffect(()=>{if(platformId)void loadDay(platformId)},[platformId]);
+
+  async function bootstrap(){
+    const {data:auth}=await supabase.auth.getUser();if(!auth.user)return;
+    const {data:profile}=await supabase.from('profiles').select('role').eq('id',auth.user.id).single();
+    const isAdmin=['manager','admin','gestor'].includes(String(profile?.role||'').toLowerCase());
+    let query=supabase.from('platforms').select('id,name,responsible_id,responsible_name,display_order,upload_deadline').eq('active',true).order('display_order');
+    if(!isAdmin)query=query.eq('responsible_id',auth.user.id);
+    const [{data:p},{data:m},{data:h}]=await Promise.all([
+      query,
+      supabase.from('indicator_definitions').select('id,platform_id,name,unit,source_section,display_order').eq('active',true).order('display_order'),
+      supabase.from('indicator_measurements').select('indicator_id,reference_date,value').order('reference_date',{ascending:true}).limit(5000),
+    ]);
+    const ps=(p||[]) as Platform[];setPlatforms(ps);setMetrics((m||[]) as Metric[]);setMeasurements((h||[]) as Measurement[]);
+    if(!params.get('platform')&&ps[0])setParams({platform:ps[0].id},{replace:true});
+  }
+
+  async function reloadMetricsAndHistory(){
+    const [{data:m},{data:h}]=await Promise.all([
+      supabase.from('indicator_definitions').select('id,platform_id,name,unit,source_section,display_order').eq('active',true).order('display_order'),
+      supabase.from('indicator_measurements').select('indicator_id,reference_date,value').order('reference_date',{ascending:true}).limit(5000),
+    ]);
+    setMetrics((m||[]) as Metric[]);setMeasurements((h||[]) as Measurement[]);
+    return (m||[]) as Metric[];
+  }
+
+  async function loadDay(pid:string){
+    setExtracted([]);setReviewValues({});setWarnings([]);
+    const {data:s}=await supabase.from('indicator_submissions').select('id,platform_id,reference_date,status,is_late,upload_completed_at').eq('platform_id',pid).eq('reference_date',date).maybeSingle();
+    setSubmission((s||null) as Submission|null);
+    if(s){const {data:i}=await supabase.from('indicator_submission_images').select('*').eq('submission_id',s.id).order('display_order');setImages((i||[]) as SubmissionImage[]);}else setImages([]);
+  }
+
+  async function ensureSubmission(){
+    if(!platform)return null;if(submission)return submission;
+    const {data,error}=await supabase.from('indicator_submissions').upsert({platform_id:platform.id,responsible_id:platform.responsible_id,reference_date:date,status:'draft'},{onConflict:'platform_id,reference_date'}).select('id,platform_id,reference_date,status,is_late,upload_completed_at').single();
+    if(error){alert(error.message);return null;}setSubmission(data as Submission);return data as Submission;
+  }
+
+  async function uploadPrints(e:ChangeEvent<HTMLInputElement>){
+    const files=Array.from(e.target.files||[]);if(!files.length||!platform)return;setUploading(true);
+    const s=await ensureSubmission();if(!s){setUploading(false);return;}
+    const {data:auth}=await supabase.auth.getUser();const uid=auth.user?.id||'unknown';const rows:any[]=[];
+    for(let index=0;index<files.length;index++){
+      const file=files[index];const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${uid}/${platform.id}/${date}/${Date.now()}-${index}-${safe}`;
+      const {error}=await supabase.storage.from('platform-indicators').upload(path,file);if(error){alert(error.message);continue;}
+      const {data:url}=supabase.storage.from('platform-indicators').getPublicUrl(path);
+      rows.push({submission_id:s.id,image_url:url.publicUrl,storage_path:path,original_name:file.name,display_order:images.length+index});
+    }
+    if(rows.length){await supabase.from('indicator_submission_images').insert(rows);await supabase.from('indicator_submissions').update({status:'uploaded',upload_completed_at:new Date().toISOString()}).eq('id',s.id);}
+    setUploading(false);e.target.value='';await loadDay(platform.id);
+  }
+
+  async function extractData(){
+    if(!submission||!images.length)return;setExtracting(true);setWarnings([]);
+    const {data,error}=await supabase.functions.invoke('extract-indicators',{body:{submission_id:submission.id}});
+    if(error||data?.error){alert(data?.error||error?.message||'Falha ao extrair dados');setExtracting(false);return;}
+    const result=(data.metrics||[]) as Extracted[];setExtracted(result);setWarnings(data.warnings||[]);
+    const next:Record<string,string>={};result.forEach(item=>{if(item.found&&item.value!==null)next[item.indicator_id]=String(item.value)});setReviewValues(next);
+    await reloadMetricsAndHistory();setExtracting(false);
+  }
+
+  async function confirmExtraction(){
+    if(!submission||!platform)return;setConfirming(true);const {data:auth}=await supabase.auth.getUser();
+    const rows=extracted.flatMap(item=>{const raw=reviewValues[item.indicator_id]?.trim();if(!raw)return[];const value=Number(raw.replace(',','.'));if(Number.isNaN(value))return[];return[{indicator_id:item.indicator_id,reference_date:date,value,source_type:'image',submission_id:submission.id,confidence:item.confidence,raw_text:item.raw_text,source_metadata:{images:images.map(i=>i.id)},created_by:auth.user?.id||null}]});
+    if(rows.length){const {error}=await supabase.from('indicator_measurements').upsert(rows,{onConflict:'indicator_id,reference_date'});if(error){alert(error.message);setConfirming(false);return;}}
+    await supabase.from('indicator_submissions').update({status:'confirmed',confirmed_at:new Date().toISOString()}).eq('id',submission.id);
+    const {data:r,error:rError}=await supabase.from('indicator_reports').upsert({platform_id:platform.id,responsible_id:platform.responsible_id,report_type:'daily',reference_date:date,title:`${platform.name} • ${date}`,status:'ready'},{onConflict:'platform_id,report_type,reference_date'}).select('id').single();
+    if(rError){alert(rError.message);setConfirming(false);return;}
+    await createDefaultBlocks(r as Report,extracted,images);
+    await reloadMetricsAndHistory();setConfirming(false);await loadDay(platform.id);
+  }
+
+  async function createDefaultBlocks(report:Report,items:Extracted[],pics:SubmissionImage[]){
+    const {count}=await supabase.from('indicator_report_blocks').select('id',{count:'exact',head:true}).eq('report_id',report.id);if((count||0)>0)return;
+    const blocks:any[]=[];let y=5;
+    items.slice(0,8).forEach((item,index)=>{blocks.push({report_id:report.id,block_type:'kpi',title:item.name,content:{indicator_id:item.indicator_id},x:index%2===0?4:52,y,width:44,height:18,z_index:blocks.length+1,style:{}});if(index%2===1)y+=22});
+    if(pics[0])blocks.push({report_id:report.id,block_type:'image',title:'Print original',content:{image_id:pics[0].id,image_url:pics[0].image_url},x:4,y:y+2,width:44,height:34,z_index:blocks.length+1,style:{}});
+    if(items[0])blocks.push({report_id:report.id,block_type:'chart',title:`Evolução • ${items[0].name}`,content:{indicator_id:items[0].indicator_id,chart_type:'area'},x:52,y:y+2,width:44,height:34,z_index:blocks.length+1,style:{}});
+    if(blocks.length)await supabase.from('indicator_report_blocks').insert(blocks);
+  }
+
+  const previous=(id:string)=>[...measurements.filter(m=>m.indicator_id===id&&m.reference_date<date)].sort((a,b)=>b.reference_date.localeCompare(a.reference_date))[0];
+  const current=(id:string)=>measurements.find(m=>m.indicator_id===id&&m.reference_date===date);
+  const history=(id:string)=>measurements.filter(m=>m.indicator_id===id).sort((a,b)=>a.reference_date.localeCompare(b.reference_date)).slice(-10).map(m=>({date:m.reference_date.slice(5),value:Number(m.value)}));
+
+  return <div className="space-y-6 text-white">
+    <section className="rounded-[28px] border border-white/10 bg-black/35 p-6 backdrop-blur-xl lg:p-8">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/75">Studio diário</p><h1 className="mt-2 text-3xl font-black">Envie os prints. O FLOW encontra os indicadores.</h1><p className="mt-2 max-w-3xl text-sm text-white/55">Você não cadastra métricas. Anexe os prints da plataforma, clique em Extrair dados, confira a leitura e confirme. O histórico e a apresentação são montados automaticamente.</p></div><select value={platformId} onChange={e=>setParams({platform:e.target.value})} className="h-10 rounded-xl border border-white/10 bg-[#07131f] px-4 text-sm">{platforms.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+      {platform&&<div className="mt-4 flex flex-wrap gap-3 text-xs text-white/45"><span>Responsável: {platform.responsible_name}</span><span>•</span><span>Prazo: {String(platform.upload_deadline).slice(0,5)}</span>{submission?.upload_completed_at&&<><span>•</span><span className={submission.is_late?'font-bold text-rose-300':'font-bold text-emerald-300'}>{submission.is_late?'Enviado com atraso':'Enviado no prazo'}</span></>}</div>}
+    </section>
+
+    <Card className="border-white/10 bg-black/30 p-5 text-white">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-black">1. Prints do dia</h2><p className="mt-1 text-sm text-white/40">Pode anexar quantos prints forem necessários para essa plataforma.</p></div><div className="flex gap-2"><label className="cursor-pointer"><input type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={uploadPrints}/><span className="inline-flex h-10 items-center rounded-md border border-white/10 bg-white/5 px-4 text-sm font-medium">{uploading?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<UploadCloud className="mr-2 h-4 w-4"/>}Anexar prints</span></label><Button disabled={!submission||!images.length||extracting} onClick={extractData} className="bg-emerald-400 text-black hover:bg-emerald-300">{extracting?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Sparkles className="mr-2 h-4 w-4"/>}Extrair dados</Button></div></div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{images.map(image=><div key={image.id} className="overflow-hidden rounded-xl border border-white/10 bg-white/[.03]"><img src={image.image_url} className="h-32 w-full object-cover"/><div className="truncate p-2 text-xs text-white/45">{image.original_name||'Print'}</div></div>)}{images.length===0&&<div className="col-span-full rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-white/35"><ImagePlus className="mx-auto mb-2 h-6 w-6"/>Nenhum print anexado ainda.</div>}</div>
+    </Card>
+
+    {extracted.length>0&&<Card className="border-white/10 bg-black/30 p-5 text-white"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-black">2. Conferir indicadores encontrados</h2><p className="mt-1 text-sm text-white/40">Esses nomes e valores vieram dos prints. Corrija apenas se a leitura estiver errada.</p></div><Button disabled={confirming} onClick={confirmExtraction} className="bg-emerald-400 text-black hover:bg-emerald-300">{confirming?<Loader2 className="mr-2 h-4 w-4 animate-spin"/>:<Check className="mr-2 h-4 w-4"/>}Confirmar e criar apresentação</Button></div>{warnings.length>0&&<div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-3 text-xs text-amber-100">{warnings.join(' • ')}</div>}<div className="mt-4 overflow-hidden rounded-xl border border-white/10"><div className="grid grid-cols-[1fr_120px_100px_1.4fr] gap-3 bg-white/[.04] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-white/35"><span>Indicador</span><span>Valor</span><span>Confiança</span><span>Trecho reconhecido</span></div>{extracted.map(item=><div key={item.indicator_id} className="grid grid-cols-[1fr_120px_100px_1.4fr] items-center gap-3 border-t border-white/5 px-4 py-3 text-sm"><div><p className="font-bold">{item.name}</p>{item.section&&<p className="text-[11px] text-white/35">{item.section}</p>}</div><Input value={reviewValues[item.indicator_id]||''} onChange={e=>setReviewValues(v=>({...v,[item.indicator_id]:e.target.value}))} className="border-white/10 bg-black/25"/><span className={item.confidence>=.85?'text-emerald-300':item.confidence>=.65?'text-amber-200':'text-rose-300'}>{Math.round(item.confidence*100)}%</span><span className="text-xs text-white/45">{item.raw_text}</span></div>)}</div></Card>}
+
+    {platformMetrics.length>0&&<Card className="border-white/10 bg-black/30 p-5 text-white"><div className="mb-4 flex items-center gap-2"><Presentation className="h-5 w-5 text-emerald-300"/><h2 className="font-black">Indicadores aprendidos de {platform?.name}</h2></div><p className="mb-4 text-sm text-white/40">Depois do primeiro envio, o FLOW reconhece esses mesmos indicadores nos próximos prints e mantém o histórico automaticamente.</p><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{platformMetrics.map(metric=>{const now=current(metric.id);const prev=previous(metric.id);const delta=now&&prev?Number(now.value)-Number(prev.value):null;return <div key={metric.id} className="rounded-2xl border border-white/10 bg-white/[.025] p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-white/35">{metric.source_section||'Indicador'}</p><h3 className="mt-1 font-black">{metric.name}</h3></div><FileImage className="h-4 w-4 text-emerald-300/60"/></div><div className="mt-3 flex items-end justify-between"><p className="text-2xl font-black">{formatValue(now?.value,metric.unit)}</p>{delta!==null&&<span className={`text-xs font-bold ${delta>=0?'text-cyan-300':'text-rose-300'}`}>{delta>=0?'+':''}{delta.toLocaleString('pt-BR')}</span>}</div><div className="mt-3 h-28"><ResponsiveContainer width="100%" height="100%"><AreaChart data={history(metric.id)}><CartesianGrid strokeDasharray="3 3" opacity={.06}/><XAxis dataKey="date" tick={{fill:'#8ba0b5',fontSize:9}} axisLine={false}/><YAxis hide/><Tooltip contentStyle={{background:'#06111b',border:'1px solid rgba(255,255,255,.12)',borderRadius:10}}/><Area type="monotone" dataKey="value" stroke="#5eead4" strokeWidth={2} fill="#5eead4" fillOpacity={.08}/></AreaChart></ResponsiveContainer></div></div>})}</div></Card>}
+  </div>;
+}
