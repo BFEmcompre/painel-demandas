@@ -16,6 +16,7 @@ import { IndicatorsPresentation } from './components/pages/IndicatorsPresentatio
 import { IndicatorsHub } from './components/pages/IndicatorsHub';
 import { IndicatorStudio } from './components/pages/IndicatorStudio';
 import { IndicatorsWeekly } from './components/pages/IndicatorsWeekly';
+import { IndicatorDefinitions } from './components/pages/IndicatorDefinitions';
 import { CreateManagerRequest } from './components/pages/CreateManagerRequest';
 import { ManagerRequests } from './components/pages/ManagerRequests';
 import { ManagerRequestDetails } from './components/pages/ManagerRequestDetails';
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: 'indicadores', Component: IndicatorsHub },
       { path: 'indicadores/studio', Component: IndicatorStudio },
       { path: 'indicadores/semanal', Component: IndicatorsWeekly },
+      { path: 'indicadores/configuracao', Component: IndicatorDefinitions },
 
       // Fluxo legado preservado durante a migração
       { path: 'indicadores/configuracao-legada', Component: Platforms },
