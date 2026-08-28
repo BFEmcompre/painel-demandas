@@ -35,8 +35,8 @@ const managerItems = [
   { icon: History, label: 'Histórico', path: '/historico' },
   { icon: Users, label: 'Responsáveis', path: '/responsaveis' },
   { icon: Repeat2, label: 'Transferir fixas', path: '/transferir-demandas-fixas' },
-  { icon: BarChart3, label: 'Indicadores', path: '/indicadores' },
-  { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
+  { icon: BarChart3, label: 'Central de indicadores', path: '/indicadores' },
+  { icon: Presentation, label: 'Studio', path: '/indicadores/studio' },
   { icon: Trophy, label: 'Recompensas', path: '/recompensas' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
 ];
@@ -46,9 +46,9 @@ const responsibleItems = [
   { icon: CheckSquare, label: 'Minhas demandas', path: '/minhas-demandas' },
   { icon: PlusSquare, label: 'Enviar demanda', path: '/nova-demanda-gestor' },
   { icon: CheckSquare, label: 'Retornos do gestor', path: '/minhas-demandas-gestor' },
-  { icon: BarChart3, label: 'Meus indicadores', path: '/meus-indicadores' },
+  { icon: BarChart3, label: 'Central de indicadores', path: '/indicadores' },
+  { icon: Presentation, label: 'Meu Studio', path: '/indicadores/studio' },
   { icon: History, label: 'Histórico', path: '/historico' },
-  { icon: Presentation, label: 'Apresentação', path: '/indicadores/apresentacao' },
   { icon: Settings, label: 'Configurações', path: '/configuracoes' },
 ];
 
@@ -139,12 +139,7 @@ export function RadialMenu({ open, onOpenChange }: RadialMenuProps) {
         }}
       >
         <div className="flow-radial-stage" role="dialog" aria-modal="true" aria-label="Navegação do Flow">
-          <button
-            type="button"
-            className="flow-radial-close"
-            onClick={() => onOpenChange(false)}
-            aria-label="Fechar menu"
-          >
+          <button type="button" className="flow-radial-close" onClick={() => onOpenChange(false)} aria-label="Fechar menu">
             <X className="h-4 w-4" />
           </button>
 
@@ -174,9 +169,7 @@ export function RadialMenu({ open, onOpenChange }: RadialMenuProps) {
                   aria-current={active ? 'page' : undefined}
                 >
                   <span className="flow-radial-number">{index + 1}</span>
-                  <span className="flow-radial-icon">
-                    <Icon className="h-6 w-6" />
-                  </span>
+                  <span className="flow-radial-icon"><Icon className="h-6 w-6" /></span>
                   <span className="flow-radial-label">{item.label}</span>
                 </button>
               );
@@ -184,15 +177,9 @@ export function RadialMenu({ open, onOpenChange }: RadialMenuProps) {
 
             <div className="flow-radial-core">
               <div className="flow-radial-core-orbit" />
-              <div className="flow-radial-core-logo">
-                <img src="/logo.png" alt="FLOW" className="h-16 w-16 object-contain" />
-              </div>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-blue-300/70">
-                Navegação
-              </p>
-              <p className="mt-1 max-w-[180px] truncate text-center text-sm font-bold text-white">
-                {selectedItem?.label}
-              </p>
+              <div className="flow-radial-core-logo"><img src="/logo.png" alt="FLOW" className="h-16 w-16 object-contain" /></div>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-blue-300/70">Navegação</p>
+              <p className="mt-1 max-w-[180px] truncate text-center text-sm font-bold text-white">{selectedItem?.label}</p>
             </div>
           </div>
 
