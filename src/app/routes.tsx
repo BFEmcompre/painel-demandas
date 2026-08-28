@@ -14,7 +14,7 @@ import { Platforms } from './components/pages/Platforms';
 import { MyIndicators } from './components/pages/MyIndicators';
 import { IndicatorsPresentation } from './components/pages/IndicatorsPresentation';
 import { IndicatorsHub } from './components/pages/IndicatorsHub';
-import { IndicatorStudioAuto } from './components/pages/IndicatorStudioAuto';
+import { IndicatorStudioLocal } from './components/pages/IndicatorStudioLocal';
 import { IndicatorStudio } from './components/pages/IndicatorStudio';
 import { IndicatorsWeekly } from './components/pages/IndicatorsWeekly';
 import { IndicatorPlatformAdmin } from './components/pages/IndicatorPlatformAdmin';
@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
 
       // FLOW Indicator Studio
       { path: 'indicadores', Component: IndicatorsHub },
-      { path: 'indicadores/studio', Component: IndicatorStudioAuto },
+      { path: 'indicadores/studio', Component: IndicatorStudioLocal },
       { path: 'indicadores/studio/editor', Component: IndicatorStudio },
       { path: 'indicadores/semanal', Component: IndicatorsWeekly },
       { path: 'indicadores/analises', Component: IndicatorAnalytics },
