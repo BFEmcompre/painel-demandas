@@ -108,7 +108,7 @@ Retorne somente JSON no formato: {"metrics":[{"name":"","section":null,"unit":"%
     const parts: any[] = [{ text: prompt }];
     for (const image of images) parts.push(await getImagePart(image.image_url));
 
-    const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash";
+    const model = Deno.env.get("GEMINI_MODEL") || "gemini-3.6-flash";
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: {
