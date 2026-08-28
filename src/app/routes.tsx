@@ -14,9 +14,9 @@ import { Platforms } from './components/pages/Platforms';
 import { MyIndicators } from './components/pages/MyIndicators';
 import { IndicatorsPresentation } from './components/pages/IndicatorsPresentation';
 import { IndicatorsHub } from './components/pages/IndicatorsHub';
-import { IndicatorStudio } from './components/pages/IndicatorStudio';
+import { IndicatorStudioAuto } from './components/pages/IndicatorStudioAuto';
 import { IndicatorsWeekly } from './components/pages/IndicatorsWeekly';
-import { IndicatorAdmin } from './components/pages/IndicatorAdmin';
+import { IndicatorPlatformAdmin } from './components/pages/IndicatorPlatformAdmin';
 import { IndicatorAnalytics } from './components/pages/IndicatorAnalytics';
 import { CreateManagerRequest } from './components/pages/CreateManagerRequest';
 import { ManagerRequests } from './components/pages/ManagerRequests';
@@ -46,10 +46,10 @@ export const router = createBrowserRouter([
 
       // FLOW Indicator Studio
       { path: 'indicadores', Component: IndicatorsHub },
-      { path: 'indicadores/studio', Component: IndicatorStudio },
+      { path: 'indicadores/studio', Component: IndicatorStudioAuto },
       { path: 'indicadores/semanal', Component: IndicatorsWeekly },
       { path: 'indicadores/analises', Component: IndicatorAnalytics },
-      { path: 'indicadores/configuracao', Component: IndicatorAdmin },
+      { path: 'indicadores/configuracao', Component: IndicatorPlatformAdmin },
 
       // Fluxo legado preservado durante a migração
       { path: 'indicadores/configuracao-legada', Component: Platforms },
